@@ -74,6 +74,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9TdG9yeUVkaXQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[/Users/anindya/work/transtv/nrcs/src/Insert.Web/Components/Pages/StoryList.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9TdG9yeUxpc3QucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [/Users/anindya/work/transtv/nrcs/src/Insert.Web/Components/Pages/Weather.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9XZWF0aGVyLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
@@ -105,10 +109,6 @@ build_metadata.AdditionalFiles.CssScope = b-13qscxfm68
 [/Users/anindya/work/transtv/nrcs/src/Insert.Web/Components/Pages/StoryDetail.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9TdG9yeURldGFpbC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = b-pdjymeabel
-
-[/Users/anindya/work/transtv/nrcs/src/Insert.Web/Components/Pages/StoryList.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9TdG9yeUxpc3QucmF6b3I=
-build_metadata.AdditionalFiles.CssScope = b-px8pmbwovf
 
 [/Users/anindya/work/transtv/nrcs/src/Insert.Web/Components/Shared/StoryStatusStepper.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9TaGFyZWQvU3RvcnlTdGF0dXNTdGVwcGVyLnJhem9y

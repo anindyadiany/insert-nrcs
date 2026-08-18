@@ -122,7 +122,6 @@
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/scopedcss/Components/Layout/NavMenu.razor.rz.scp.css
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/scopedcss/Components/Layout/ReconnectModal.razor.rz.scp.css
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/scopedcss/Components/Pages/StoryDetail.razor.rz.scp.css
-/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/scopedcss/Components/Pages/StoryList.razor.rz.scp.css
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/scopedcss/Components/Shared/StoryStatusStepper.razor.rz.scp.css
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/scopedcss/bundle/Insert.Web.styles.css
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/scopedcss/projectbundle/Insert.Web.bundle.scp.css
@@ -187,6 +186,6 @@
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/Insert.Web.pdb
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/Insert.Web.genruntimeconfig.cache
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/ref/Insert.Web.dll
-/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/n32og7p8pl-{0}-pm34yz4aei-pm34yz4aei.gz
-/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/6ekz0inspa-{0}-pm34yz4aei-pm34yz4aei.gz
-/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/wu9wsty3xk-{0}-70j8325yvy-70j8325yvy.gz
+/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/n32og7p8pl-{0}-5ul88vm8qu-5ul88vm8qu.gz
+/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/6ekz0inspa-{0}-5ul88vm8qu-5ul88vm8qu.gz
+/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/wu9wsty3xk-{0}-wiih6k1k44-wiih6k1k44.gz

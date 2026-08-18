@@ -1,35 +1,47 @@
-<div class="stepper">
-    <div class="stepper-labels">
-        @for (var i = 0; i < Steps.Length; i++)
+@using System.Globalization
+<div class="stepper2">
+    <div class="stepper2-labels">
+        @for (int i = 0; i < Steps.Count; i++)
         {
-            var isDone = i <= CurrentIndex;
-            <div class="stepper-label @(isDone ? "is-done" : "")">@Steps[i]</div>
+            <div class="stepper2-col">
+                <span class="stepper2-label @(IsOn(i) ? "is-active" : "")">@FormatLabel(Steps[i])</span>
+            </div>
         }
     </div>
 
-    <div class="stepper-track">
-        <div class="stepper-fill" style="width: @(FillPercent)%"></div>
-        @for (var i = 0; i <= CurrentIndex; i++)
-        {
-            var left = (i + 1) * 100.0 / Steps.Length;
-            <span class="stepper-dot" style="left: @(left.ToString(Culture))%"></span>
-        }
+    <div class="stepper2-bar">
+        <div class="stepper2-fill @(IsKilled ? "is-killed" : "")" style="width:@FillPercent.ToString("0.##", CultureInfo.InvariantCulture)%"></div>
+        <div class="stepper2-dots">
+            @for (int i = 0; i < Steps.Count; i++)
+            {
+                <div class="stepper2-col">
+                    <div class="stepper2-dot @(IsOn(i) ? "is-active" : "") @(i == CurrentIndex ? "is-current" : "")"></div>
+                </div>
+            }
+        </div>
     </div>
 </div>
 
 @code {
     [Parameter] public string Status { get; set; } = "Draft";
 
-    private static readonly string[] Steps =
-        { "Draft", "Assigned", "In Review", "Approved", "Published", "Killed" };
+    private static readonly List<string> Steps = new()
+    {
+        "Draft", "Assigned", "InProgress", "InReview", "Approved", "Published", "Killed"
+    };
 
-    private static readonly System.Globalization.CultureInfo Culture =
-        System.Globalization.CultureInfo.InvariantCulture;
+    private bool IsKilled => Status == "Killed";
+    private int CurrentIndex => Math.Max(Steps.IndexOf(Status), 0);
 
-    private int CurrentIndex => Array.FindIndex(
-        Steps, s => string.Equals(s.Replace(" ", ""), Status?.Replace(" ", ""),
-                                  StringComparison.OrdinalIgnoreCase));
+    // dot i sits at the centre of its column -> (i + 0.5) / count
+    private double FillPercent => (CurrentIndex + 0.5) / Steps.Count * 100d;
 
-    private string FillPercent =>
-        ((CurrentIndex + 1) * 100.0 / Steps.Length).ToString("0.##", Culture);
+    private bool IsOn(int i) => IsKilled ? i == Steps.Count - 1 : i <= CurrentIndex;
+
+    private string FormatLabel(string step) => step switch
+    {
+        "InProgress" => "In Progress",
+        "InReview"   => "In Review",
+        _            => step
+    };
 }

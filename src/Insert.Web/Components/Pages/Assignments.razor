@@ -33,9 +33,9 @@
             <thead>
                 <tr>
                     <th>Story</th>
+                    <th>Status</th>
                     <th>Location</th>
                     <th>Deadline</th>
-                    <th>Status</th>
                 </tr>
             </thead>
             <tbody>
@@ -44,9 +44,9 @@
                     var storyId = a.StoryId;
                     <tr @onclick="() => OpenStory(storyId)">
                         <td>@GetStoryTitle(a.StoryId)</td>
+                        <td><span class="chip @ChipClass(a.Status)">@a.Status</span></td>
                         <td>@(a.Location ?? "-")</td>
                         <td>@(a.Deadline?.ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
-                        <td><span class="chip @ChipClass(a.Status)">@a.Status</span></td>
                     </tr>
                 }
             </tbody>

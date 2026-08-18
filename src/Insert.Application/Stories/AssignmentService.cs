@@ -13,6 +13,16 @@ public class CreateAssignmentRequest
     public string? Notes { get; set; }
 }
 
+public class UpdateAssignmentRequest
+{
+    public Guid ReporterId { get; set; }
+    public string? Location { get; set; }
+    public string? Event { get; set; }
+    public DateTime? Deadline { get; set; }
+    public string? Brief { get; set; }
+    public string? Notes { get; set; }
+}
+
 public class AssignmentService
 {
     private readonly IAssignmentRepository _assignmentRepository;
@@ -31,6 +41,7 @@ public class AssignmentService
         _workflow = workflow;
         _userLookup = userLookup;
     }
+    
 
     public Task<List<UserSummary>> GetReportersAsync() => _userLookup.GetUsersInRoleAsync("Reporter");
 
@@ -64,6 +75,21 @@ public class AssignmentService
 
         await _assignmentRepository.SaveChangesAsync();
         return assignment;
+    }
+
+    public async Task UpdateAssignmentAsync(Guid assignmentId, UpdateAssignmentRequest request)
+    {
+        var assignment = await _assignmentRepository.GetByIdAsync(assignmentId)
+            ?? throw new KeyNotFoundException("Assignment not found.");
+
+        assignment.ReporterId = request.ReporterId;
+        assignment.Location = request.Location;
+        assignment.Event = request.Event;
+        assignment.Deadline = request.Deadline;
+        assignment.Brief = request.Brief;
+        assignment.Notes = request.Notes;
+
+        await _assignmentRepository.SaveChangesAsync();
     }
 
     public Task<List<Assignment>> GetAllAssignmentsAsync() => _assignmentRepository.GetAllAsync();

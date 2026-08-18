@@ -26,4 +26,7 @@ public class AssignmentRepository : IAssignmentRepository
 
     public Task<List<Assignment>> GetByReporterIdAsync(Guid reporterId) =>
         _context.Assignments.Where(a => a.ReporterId == reporterId).ToListAsync();
+
+    public Task<Assignment?> GetByIdAsync(Guid id) =>
+        _context.Assignments.FirstOrDefaultAsync(a => a.Id == id);
 }
