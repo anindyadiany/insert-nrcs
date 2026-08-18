@@ -1,0 +1,99 @@
+@page "/assignments"
+@rendermode InteractiveServer
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Insert.Application.Stories
+@using Insert.Domain.Entities
+@attribute [Authorize(Roles = "Reporter,Producer,AssignmentDesk")]
+@inject AssignmentService AssignmentService
+@inject StoryService StoryService
+@inject NavigationManager Nav
+
+<PageTitle>Assignments - INSERT NRCS</PageTitle>
+
+<div class="story-page">
+    <div class="stories-header">
+        <h1 class="story-title">@(isDesk ? "All Assignments" : "My Assignments")</h1>
+    </div>
+
+    @if (assignments is null)
+    {
+        <p class="loading">Loading...</p>
+    }
+    else if (!assignments.Any())
+    {
+        <div class="card">
+            <p class="empty-text">Belum ada assignment.</p>
+        </div>
+    }
+    else
+    {
+        <table class="stories-table">
+            <thead>
+                <tr>
+                    <th>Story</th>
+                    <th>Location</th>
+                    <th>Deadline</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in assignments)
+                {
+                    var storyId = a.StoryId;
+                    <tr @onclick="() => OpenStory(storyId)">
+                        <td>@GetStoryTitle(a.StoryId)</td>
+                        <td>@(a.Location ?? "-")</td>
+                        <td>@(a.Deadline?.ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
+                        <td><span class="chip @ChipClass(a.Status)">@a.Status</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthState { get; set; }
+
+    private List<Assignment>? assignments;
+    private Dictionary<Guid, string> storyTitles = new();
+    private bool isDesk;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await AuthState!).User;
+        isDesk = user.IsInRole("AssignmentDesk") || user.IsInRole("Producer");
+
+        var stories = await StoryService.GetAllStoriesAsync();
+        storyTitles = stories.ToDictionary(s => s.Id, s => s.Title);
+
+        if (isDesk)
+        {
+            assignments = await AssignmentService.GetAllAssignmentsAsync();
+        }
+        else
+        {
+            var idClaim = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            assignments = Guid.TryParse(idClaim, out var reporterId)
+                ? await AssignmentService.GetAssignmentsForReporterAsync(reporterId)
+                : new List<Assignment>();
+        }
+    }
+
+    private string GetStoryTitle(Guid storyId) =>
+        storyTitles.TryGetValue(storyId, out var title) ? title : "(unknown story)";
+
+    private void OpenStory(Guid storyId) => Nav.NavigateTo($"/stories/{storyId}");
+
+    private string ChipClass(AssignmentStatus status) => status switch
+    {
+        AssignmentStatus.Pending => "chip-assignment-pending",
+        AssignmentStatus.Accepted => "chip-assignment-accepted",
+        AssignmentStatus.Declined => "chip-assignment-declined",
+        AssignmentStatus.Cancelled => "chip-assignment-cancelled",
+        _ => "chip-assignment-pending"
+    };
+}

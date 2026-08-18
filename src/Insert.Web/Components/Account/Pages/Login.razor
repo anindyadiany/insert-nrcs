@@ -1,0 +1,113 @@
+@page "/Account/Login"
+
+@layout AccountLayout
+
+@using System.ComponentModel.DataAnnotations
+
+@using Microsoft.AspNetCore.Identity
+@using Insert.Infrastructure.Identity
+@using Insert.Web.Components.Account
+
+@inject SignInManager<ApplicationUser> SignInManager
+@inject ILogger<Login> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Log in - INSERT NRCS</PageTitle>
+
+<div class="sign-in">
+    <div class="sign-in-form">
+        <div class="insert-nrcs">
+            <img src="images/logo-insert.svg" alt="INSERT NRCS" class="insert-nrcs-logo" />
+        </div>
+
+        <div class="greeting">
+            <div class="greeting-title">Halo,<br />Selamat Datang Kembali!</div>
+            <div class="greeting-subtitle">Masukkan kredensial untuk mengakses akunmu</div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger" role="alert">@errorMessage</div>
+        }
+
+        <EditForm EditContext="editContext" method="post" OnSubmit="LoginUser" FormName="login" class="login-fields">
+            <DataAnnotationsValidator />
+
+            <div class="field-group">
+                <label for="Input.Email">Email</label>
+                <InputText @bind-Value="Input.Email" id="Input.Email" class="field-input" autocomplete="username" placeholder="Enter your email" />
+                <ValidationMessage For="() => Input.Email" class="text-danger" />
+            </div>
+
+            <div class="field-group">
+                <label for="Input.Password">Password</label>
+                <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="field-input" autocomplete="current-password" placeholder="Enter your password" />
+                <ValidationMessage For="() => Input.Password" class="text-danger" />
+            </div>
+
+            <button type="submit" class="sign-in-button">SIGN IN</button>
+        </EditForm>
+
+        <div class="forgot-password">
+            Forgot password? <span class="reset-password">Reset Password</span>
+        </div>
+    </div>
+    <div class="sign-in-image"></div>
+</div>
+
+@code {
+    private string? errorMessage;
+    private EditContext editContext = default!;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Input ??= new();
+        editContext = new EditContext(Input);
+    }
+
+    public async Task LoginUser()
+    {
+        if (!editContext.Validate())
+        {
+            return;
+        }
+
+        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, isPersistent: true, lockoutOnFailure: true);
+
+        if (result.Succeeded)
+        {
+            Logger.LogInformation("User logged in.");
+            RedirectManager.RedirectTo(ReturnUrl ?? "/");
+        }
+        else if (result.IsLockedOut)
+        {
+            Logger.LogWarning("User account locked out.");
+            RedirectManager.RedirectTo("Account/Lockout");
+        }
+        else
+        {
+            errorMessage = "Error: Invalid login attempt.";
+        }
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = "";
+
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+    }
+}

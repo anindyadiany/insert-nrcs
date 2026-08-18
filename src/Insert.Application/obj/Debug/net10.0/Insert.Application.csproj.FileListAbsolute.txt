@@ -1,0 +1,16 @@
+/Users/anindya/work/transtv/nrcs/src/Insert.Application/bin/Debug/net10.0/Insert.Application.deps.json
+/Users/anindya/work/transtv/nrcs/src/Insert.Application/bin/Debug/net10.0/Insert.Application.dll
+/Users/anindya/work/transtv/nrcs/src/Insert.Application/bin/Debug/net10.0/Insert.Application.pdb
+/Users/anindya/work/transtv/nrcs/src/Insert.Application/bin/Debug/net10.0/Insert.Domain.dll
+/Users/anindya/work/transtv/nrcs/src/Insert.Application/bin/Debug/net10.0/Insert.Domain.pdb
+/Users/anindya/work/transtv/nrcs/src/Insert.Application/obj/Debug/net10.0/Insert.Application.csproj.AssemblyReference.cache
+/Users/anindya/work/transtv/nrcs/src/Insert.Application/obj/Debug/net10.0/Insert.Application.GeneratedMSBuildEditorConfig.editorconfig
+/Users/anindya/work/transtv/nrcs/src/Insert.Application/obj/Debug/net10.0/Insert.Application.AssemblyInfoInputs.cache
+/Users/anindya/work/transtv/nrcs/src/Insert.Application/obj/Debug/net10.0/Insert.Application.AssemblyInfo.cs
+/Users/anindya/work/transtv/nrcs/src/Insert.Application/obj/Debug/net10.0/Insert.Application.csproj.CoreCompileInputs.cache
+/Users/anindya/work/transtv/nrcs/src/Insert.Application/obj/Debug/net10.0/Insert.Application.sourcelink.json
+/Users/anindya/work/transtv/nrcs/src/Insert.Application/obj/Debug/net10.0/Insert.A.DF94E78A.Up2Date
+/Users/anindya/work/transtv/nrcs/src/Insert.Application/obj/Debug/net10.0/Insert.Application.dll
+/Users/anindya/work/transtv/nrcs/src/Insert.Application/obj/Debug/net10.0/refint/Insert.Application.dll
+/Users/anindya/work/transtv/nrcs/src/Insert.Application/obj/Debug/net10.0/Insert.Application.pdb
+/Users/anindya/work/transtv/nrcs/src/Insert.Application/obj/Debug/net10.0/ref/Insert.Application.dll

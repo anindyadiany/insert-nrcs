@@ -1,0 +1,40 @@
+.stepper { width: 100%; }
+
+.stepper-labels {
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.stepper-label {
+    flex: 1;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    color: #CDCDCD;
+    text-align: center;
+}
+.stepper-label.is-done { color: #28282B; }
+
+.stepper-track {
+    position: relative;
+    height: 12px;
+    border-radius: 6px;
+    background-color: #E0E0E0;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.25);
+}
+
+.stepper-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #00549E, #0090D4);
+    transition: width 0.3s ease;
+}
+
+.stepper-dot {
+    position: absolute;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #fff;
+    transform: translate(-50%, -50%);
+}

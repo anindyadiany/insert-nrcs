@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-Insert.Worker-d86ba4e4-af30-4bc0-867c-bcb26448697d</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Insert.Application\Insert.Application.csproj" />
+    <ProjectReference Include="..\Insert.Infrastructure\Insert.Infrastructure.csproj" />
+    <ProjectReference Include="..\Insert.Media\Insert.Media.csproj" />
+  </ItemGroup>
+</Project>

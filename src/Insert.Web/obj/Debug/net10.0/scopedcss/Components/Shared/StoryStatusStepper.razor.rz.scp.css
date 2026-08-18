@@ -1,0 +1,40 @@
+.stepper[b-v4xlg4cqq4] { width: 100%; }
+
+.stepper-labels[b-v4xlg4cqq4] {
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.stepper-label[b-v4xlg4cqq4] {
+    flex: 1;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    color: #CDCDCD;
+    text-align: center;
+}
+.stepper-label.is-done[b-v4xlg4cqq4] { color: #28282B; }
+
+.stepper-track[b-v4xlg4cqq4] {
+    position: relative;
+    height: 12px;
+    border-radius: 6px;
+    background-color: #E0E0E0;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.25);
+}
+
+.stepper-fill[b-v4xlg4cqq4] {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #00549E, #0090D4);
+    transition: width 0.3s ease;
+}
+
+.stepper-dot[b-v4xlg4cqq4] {
+    position: absolute;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #fff;
+    transform: translate(-50%, -50%);
+}

@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Insert.Application/Insert.Application.csproj" />
+    <Project Path="src/Insert.Domain/Insert.Domain.csproj" />
+    <Project Path="src/Insert.Infrastructure/Insert.Infrastructure.csproj" />
+    <Project Path="src/Insert.Media/Insert.Media.csproj" />
+    <Project Path="src/Insert.Web/Insert.Web.csproj" />
+    <Project Path="src/Insert.Worker/Insert.Worker.csproj" />
+  </Folder>
+</Solution>

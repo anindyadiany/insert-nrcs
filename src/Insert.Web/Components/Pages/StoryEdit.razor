@@ -1,0 +1,216 @@
+@page "/stories/{id:guid}/edit"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Insert.Application.Stories
+@using Insert.Domain.Entities
+@using Insert.Web.Components.Shared
+@attribute [Authorize(Roles = "Reporter,Producer,AssignmentDesk")]
+@inject StoryService StoryService
+@inject AssignmentService AssignmentService
+
+<PageTitle>@(story?.Title ?? "Story") - INSERT NRCS</PageTitle>
+
+<div class="story-page">
+    @if (story is null)
+    {
+        <p class="loading">Loading...</p>
+    }
+    else
+    {
+        <div class="story-header">
+            <div class="story-heading">
+                <a href="/stories" class="back-link">
+                    <iconify-icon icon="mdi:arrow-left" width="18" height="18"></iconify-icon>
+                    Stories
+                </a>
+                <h1 class="story-title">@story.Title</h1>
+            </div>
+            <a href="/stories/@story.Id/edit" class="btn-outline">Edit</a>
+        </div>
+
+        <div class="stepper-wrap">
+            <StoryStatusStepper Status="@story.Status.ToString()" />
+        </div>
+
+        <div class="detail-grid">
+            <!-- ===== Kartu kiri: info story ===== -->
+            <div class="card">
+                <div class="card-head">
+                    <h5 class="card-title">@story.Title</h5>
+                </div>
+
+                <div class="card-scroll">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Status</span>
+                            <span class="chip @ChipClass(story.Status)">@story.Status</span>
+                        </div>
+
+                        <div class="info-item">
+                            <span class="info-label">Priority</span>
+                            <span class="chip @PriorityClass(story.Priority)">@story.Priority</span>
+                        </div>
+
+                        <div class="info-item">
+                            <span class="info-label">Category</span>
+                            <span class="info-value">@Show(story.Category)</span>
+                        </div>
+
+                        <div class="info-item">
+                            <span class="info-label">Program</span>
+                            <span class="info-value">@Show(story.Program)</span>
+                        </div>
+
+                        <div class="info-item">
+                            <span class="info-label">Deadline</span>
+                            <span class="info-value">@(story.Deadline?.ToString("dd/MM/yyyy HH:mm") ?? "-")</span>
+                        </div>
+
+                        <div class="info-item">
+                            <span class="info-label">Notes</span>
+                            <span class="info-value">@Show(story.Notes)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== Kartu kanan: assignments ===== -->
+            <div class="card">
+                <div class="card-head">
+                    <h5 class="card-title">Assignments</h5>
+                    @if (assignment is not null && !showAssignForm)
+                    {
+                        <button class="btn-icon-text" @onclick="() => showAssignForm = true">
+                            <iconify-icon icon="mdi:plus" width="16" height="16"></iconify-icon>
+                            Add
+                        </button>
+                    }
+                </div>
+
+                <div class="card-scroll">
+                    @if (showAssignForm)
+                    {
+                        <EditForm Model="newAssignment" OnValidSubmit="CreateAssignment" class="form-stack">
+                            <DataAnnotationsValidator />
+
+                            <div class="field-group">
+                                <label>Reporter ID</label>
+                                <InputText class="field-input" @bind-Value="reporterIdInput"
+                                           placeholder="paste a user's GUID for now" />
+                                @if (reporterIdError)
+                                {
+                                    <span class="field-error">Reporter ID harus berupa GUID yang valid.</span>
+                                }
+                            </div>
+
+                            <div class="field-group">
+                                <label>Location</label>
+                                <InputText class="field-input" @bind-Value="newAssignment.Location" />
+                            </div>
+
+                            <div class="field-group">
+                                <label>Brief</label>
+                                <InputTextArea class="field-input" @bind-Value="newAssignment.Brief" rows="4" />
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary">Save</button>
+                                <button type="button" class="btn-text" @onclick="() => showAssignForm = false">Cancel</button>
+                            </div>
+                        </EditForm>
+                    }
+                    else if (assignment is not null)
+                    {
+                        <ul class="assignment-list">
+                            <li class="assignment-row">
+                                <div class="assignment-info">
+                                    <span class="assignment-name">@Show(assignment.Location, "Assignment")</span>
+                                    <span class="assignment-meta">@Show(assignment.Brief, "Tidak ada brief")</span>
+                                </div>
+                                <button class="icon-btn" title="Edit assignment">
+                                    <iconify-icon icon="mdi:pencil-outline" width="18" height="18"></iconify-icon>
+                                </button>
+                            </li>
+                        </ul>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <p class="empty-text">Belum ada assignment untuk story ini.</p>
+                            <button class="btn-outline" @onclick="() => showAssignForm = true">
+                                + Create Assignment
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Kartu bawah: script ===== -->
+        <div class="card script-card">
+            <div class="card-head">
+                <h5 class="card-title">Script</h5>
+            </div>
+
+            <div class="card-scroll">
+                <div class="empty-state">
+                    <p class="empty-text">Belum ada script untuk story ini.</p>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private Story? story;
+    private Assignment? assignment;
+    private bool showAssignForm = false;
+    private bool reporterIdError = false;
+    private string reporterIdInput = "";
+    private CreateAssignmentRequest newAssignment = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        story = await StoryService.GetStoryByIdAsync(Id);
+    }
+
+    private async Task CreateAssignment()
+    {
+        if (!Guid.TryParse(reporterIdInput, out var reporterId))
+        {
+            reporterIdError = true;
+            return;
+        }
+
+        reporterIdError = false;
+        newAssignment.StoryId = Id;
+        newAssignment.ReporterId = reporterId;
+
+        assignment = await AssignmentService.CreateAssignmentAsync(newAssignment);
+        story = await StoryService.GetStoryByIdAsync(Id);
+        showAssignForm = false;
+    }
+
+    private static string Show(string? value, string fallback = "-") =>
+        string.IsNullOrWhiteSpace(value) ? fallback : value;
+
+    private string ChipClass(StoryStatus status) => status switch
+    {
+        StoryStatus.Draft => "chip-draft",
+        StoryStatus.InReview => "chip-review",
+        StoryStatus.Approved => "chip-approved",
+        StoryStatus.Published => "chip-published",
+        StoryStatus.Killed => "chip-killed",
+        _ => "chip-assigned"
+    };
+
+    private string PriorityClass(StoryPriority priority) => priority switch
+    {
+        StoryPriority.Breaking => "chip-breaking",
+        StoryPriority.Urgent => "chip-urgent",
+        StoryPriority.High => "chip-high",
+        _ => "chip-normal"
+    };
+}

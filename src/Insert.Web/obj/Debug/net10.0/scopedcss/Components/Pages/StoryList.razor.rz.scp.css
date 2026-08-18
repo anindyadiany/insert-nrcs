@@ -1,0 +1,70 @@
+.stories-page[b-px8pmbwovf] {
+    background-color: #fff;
+    min-height: 100vh;
+}
+
+.stories-header[b-px8pmbwovf] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+/* ===== Tabel ===== */
+.stories-table[b-px8pmbwovf] {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 12px;
+}
+
+.stories-table th[b-px8pmbwovf] {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: #6C6C6C;
+    text-align: left;
+    padding: 0 24px 8px;
+}
+
+.stories-table td[b-px8pmbwovf] {
+    background-color: #fff;
+    height: 65px;
+    padding: 0 24px;
+    font-size: 14px;
+    vertical-align: middle;
+    border-top: 1px solid #E5E5E5;
+    border-bottom: 1px solid #E5E5E5;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.08);
+}
+.stories-table tbody td:first-child[b-px8pmbwovf] {
+    border-left: 1px solid #E5E5E5;
+    border-top-left-radius: 16px;
+    border-bottom-left-radius: 16px;
+}
+.stories-table tbody td:last-child[b-px8pmbwovf] {
+    border-right: 1px solid #E5E5E5;
+    border-top-right-radius: 16px;
+    border-bottom-right-radius: 16px;
+}
+
+.stories-table tbody tr[b-px8pmbwovf] { cursor: pointer; }
+.stories-table tbody tr:hover td[b-px8pmbwovf] { background-color: #D6EEFF; }
+
+.stories-table tbody tr:first-child td:first-child[b-px8pmbwovf] { border-top-left-radius: 16px; }
+.stories-table tbody tr:first-child td:last-child[b-px8pmbwovf]  { border-top-right-radius: 16px; }
+.stories-table tbody tr:last-child  td:first-child[b-px8pmbwovf] { border-bottom-left-radius: 16px; }
+.stories-table tbody tr:last-child  td:last-child[b-px8pmbwovf]  { border-bottom-right-radius: 16px; }
+.stories-table tbody tr:last-child td[b-px8pmbwovf] { border-bottom: none; }
+
+/* ===== Ikon aksi ===== */
+.col-actions[b-px8pmbwovf] { text-align: right; white-space: nowrap; }
+.icon-btn[b-px8pmbwovf] {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #0090D4;
+    padding: 6px;
+    line-height: 0;
+}
+.icon-btn:hover[b-px8pmbwovf] { opacity: 0.7; }

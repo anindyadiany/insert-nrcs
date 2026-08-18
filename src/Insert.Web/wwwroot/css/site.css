@@ -1,0 +1,169 @@
+:root {
+  /* Bootstrap overrides — what btn-primary, badge bg-success, etc. actually read */
+  --bs-primary: #00549E;
+  --bs-primary-rgb: 0, 84, 158;
+  --bs-success: #1C8A42;
+  --bs-success-rgb: 28, 138, 66;
+  --bs-warning: #F7941E;
+  --bs-warning-rgb: 247, 148, 30;
+  --bs-danger: #D32F2F;
+  --bs-danger-rgb: 211, 47, 47;
+  --bs-info: #0090D4;
+  --bs-info-rgb: 0, 144, 212;
+  --bs-body-bg: #FFFFFF;
+  --bs-border-color: #E1E4E8;
+  --bs-body-color: #1A1D21;
+  --bs-secondary-color: #5A6169;
+
+  /* Your own tokens — for custom CSS you write yourself, outside Bootstrap's classes */
+  --color-primary: #00549E;
+  --color-info: #0090D4;
+  --color-success: #1C8A42;
+  --color-warning: #F7941E;
+  --color-danger: #D32F2F;
+  --color-lime: #A9CE3B;
+  --color-yellow: #FFD400;
+  --color-purple: #8E3B8F;
+  --color-surface-1: #FFFFFF;
+  --color-surface-2: #F4F5F7;
+  --color-border: #E1E4E8;
+  --color-text-primary: #1A1D21;
+  --color-text-secondary: #5A6169;
+  --color-text-muted: #9BA1A8;
+}
+
+/* ===== Layout halaman story ===== */
+.story-page {
+    padding: 32px 40px;
+    background-color: #FFFFFF;
+    min-height: 100vh;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    color: #000;
+}
+
+.story-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.story-title { font-size: 28px; font-weight: 600; margin: 0; }
+
+.loading { padding: 40px; color: #6C6C6C; }
+
+/* ===== Kartu ===== */
+.card {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.08);
+    padding: 24px;
+    margin-bottom: 24px;
+}
+.card-title { font-size: 16px; font-weight: 600; margin: 0 0 16px; }
+.empty-text { color: #6C6C6C; font-size: 14px; margin: 0; }
+
+/* ===== Form ===== */
+.form-stack { display: flex; flex-direction: column; gap: 20px; }
+
+.field-group { display: flex; flex-direction: column; gap: 8px; }
+.field-group label { font-size: 14px; font-weight: 500; }
+
+.field-input {
+    border-radius: 12px;
+    border: 1px solid #000;
+    padding: 14px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: #fff;
+}
+.field-input::placeholder { color: #CDCDCD; }
+
+.form-actions { display: flex; align-items: center; gap: 16px; }
+
+/* ===== Tombol ===== */
+.btn-primary {
+    border: none;
+    border-radius: 12px;
+    background-color: #00549E;
+    color: #fff;
+    font-family: inherit;
+    font-weight: 500;
+    font-size: 14px;
+    padding: 14px 24px;
+    cursor: pointer;
+}
+.btn-primary:hover { background-color: #003F78; }
+
+.btn-outline {
+    border: 1px solid #00549E;
+    border-radius: 12px;
+    background: transparent;
+    color: #00549E;
+    font-family: inherit;
+    font-weight: 500;
+    font-size: 14px;
+    padding: 12px 20px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-outline:hover { background-color: #F0F6FB; }
+
+.btn-text {
+    background: none;
+    border: none;
+    color: #6C6C6C;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    padding: 0;
+}
+.btn-text:hover { text-decoration: underline; }
+
+/* ===== Detail list ===== */
+.detail-list {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 12px 24px;
+    margin: 0;
+    font-size: 14px;
+}
+.detail-list dt { color: #6C6C6C; font-weight: 500; }
+.detail-list dd { margin: 0; }
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #fff;
+    white-space: nowrap;
+}
+
+/* Priority */
+.chip-priority-normal   { background-color: var(--color-text-muted); }
+.chip-priority-high     { background-color: var(--color-info); }
+.chip-priority-urgent   { background-color: var(--color-warning); }
+.chip-priority-breaking { background-color: var(--color-danger); }
+
+/* Status */
+.chip-draft    { background-color: var(--color-text-muted); }
+.chip-assigned { background-color: var(--color-info); }
+.chip-review   { background-color: var(--color-yellow); }
+.chip-approved { background-color: var(--color-lime); }
+.chip-published { background-color: var(--color-success); }
+.chip-killed   { background-color: var(--color-purple); }
+
+.chip-assignment-pending   { background-color: var(--color-text-muted); }
+.chip-assignment-accepted  { background-color: var(--color-success); }
+.chip-assignment-declined  { background-color: var(--color-danger); }
+.chip-assignment-cancelled { background-color: var(--color-text-muted); }
+

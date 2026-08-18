@@ -1,0 +1,189 @@
+.story-heading { display: flex; flex-direction: column; gap: 8px; }
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #6C6C6C;
+    text-decoration: none;
+    width: fit-content;
+}
+.back-link:hover { color: #00549E; }
+
+.stepper-wrap { margin-bottom: 32px; }
+
+/* ===== Grid dua kolom ===== */
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+    .detail-grid { grid-template-columns: 1fr; }
+}
+
+/* ===== Kartu tinggi tetap + scroll ===== */
+.detail-grid > .card {
+    height: 380px;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    margin-bottom: 0;
+}
+
+.script-card {
+    height: 360px;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+.card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-shrink: 0;
+}
+.card-head .card-title { margin: 0; }
+
+.card-scroll {
+    flex: 1;
+    min-height: 0;      /* wajib, kalau tidak scroll-nya mati */
+    overflow-y: auto;
+}
+
+/* ===== Isi kartu detail ===== */
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px 32px;
+}
+
+.info-item { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+
+.info-label { font-size: 14px; font-weight: 600; color: #28282B; }
+.info-value { font-size: 14px; color: #4A4A4A; }
+
+/* ===== Daftar assignment ===== */
+.assignment-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.assignment-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px;
+    border: 1px solid #E5E5E5;
+    border-radius: 12px;
+    background-color: #fff;
+}
+.assignment-row:hover { border-color: #0090D4; }
+
+.assignment-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.assignment-name { font-size: 14px; color: #28282B; }
+.assignment-meta {
+    font-size: 13px;
+    color: #6C6C6C;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn-icon-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: #0090D4;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 4px;
+}
+.btn-icon-text:hover { opacity: 0.7; }
+
+.icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #0090D4;
+    padding: 6px;
+    line-height: 0;
+}
+.icon-btn:hover { opacity: 0.7; }
+
+.empty-state { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+
+.field-error { font-size: 13px; color: #D32F2F; }
+
+/* ===== Chip ===== */
+.chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #fff;
+    white-space: nowrap;
+}
+.chip-draft     { background-color: #6C6C6C; }
+.chip-assigned  { background-color: #0090D4; }
+.chip-review    { background-color: #F2C94C; color: #28282B; }
+.chip-approved  { background-color: #A9CE3B; color: #28282B; }
+.chip-published { background-color: #2E7D32; }
+.chip-killed    { background-color: #8E3B8F; }
+
+.chip-breaking { background-color: #C0392B; }
+.chip-urgent   { background-color: #E8A33D; }
+.chip-high     { background-color: #3498DB; }
+.chip-normal   { background-color: #9E9E9E; }
+
+.head-actions { display: flex; align-items: center; gap: 12px; }
+
+.btn-save {
+    border: none;
+    border-radius: 8px;
+    background-color: #00549E;
+    color: #fff;
+    font-family: inherit;
+    font-weight: 500;
+    font-size: 13px;
+    padding: 8px 16px;
+    cursor: pointer;
+}
+.btn-save:hover { background-color: #003F78; }
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.script-input {
+    min-height: 220px;
+    resize: vertical;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+}
+
+.script-body {
+    margin: 0;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    color: #28282B;
+}

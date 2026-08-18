@@ -1,0 +1,346 @@
+@page "/stories/{id:guid}"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Insert.Application.Stories
+@using Insert.Domain.Entities
+@using Insert.Web.Components.Shared
+@attribute [Authorize(Roles = "Reporter,Producer,AssignmentDesk")]
+@inject StoryService StoryService
+@inject AssignmentService AssignmentService
+
+<PageTitle>@(story?.Title ?? "Story") - INSERT NRCS</PageTitle>
+
+<div class="story-page">
+    @if (story is null)
+    {
+        <p class="loading">Loading...</p>
+    }
+    else
+    {
+        <div class="story-header">
+            <div class="story-heading">
+                <a href="/stories" class="back-link">
+                    <iconify-icon icon="mdi:arrow-left" width="18" height="18"></iconify-icon>
+                    Stories
+                </a>
+                <h1 class="story-title">@story.Title</h1>
+            </div>
+        </div>
+
+        <div class="stepper-wrap">
+            <StoryStatusStepper Status="@story.Status.ToString()" />
+        </div>
+
+        <div class="detail-grid">
+            <!-- ===== Detail ===== -->
+            <div class="card">
+                <div class="card-head">
+                    <h5 class="card-title">Detail</h5>
+
+                    @if (editDetail)
+                    {
+                        <div class="head-actions">
+                            <button class="btn-text" @onclick="CancelDetail">Cancel</button>
+                            <button class="btn-save" @onclick="SaveDetail">Save</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <button class="icon-btn" title="Edit detail" @onclick="StartEditDetail">
+                            <iconify-icon icon="mdi:pencil-outline" width="18" height="18"></iconify-icon>
+                        </button>
+                    }
+                </div>
+
+                <div class="card-scroll">
+                    @if (editDetail)
+                    {
+                        <div class="form-stack">
+                            <div class="field-group">
+                                <label>Title</label>
+                                <input class="field-input" @bind="draft.Title" />
+                            </div>
+                            <div class="field-row">
+                                <div class="field-group">
+                                    <label>Category</label>
+                                    <input class="field-input" @bind="draft.Category" />
+                                </div>
+                                <div class="field-group">
+                                    <label>Program</label>
+                                    <input class="field-input" @bind="draft.Program" />
+                                </div>
+                            </div>
+                            <div class="field-group">
+                                <label>Priority</label>
+                                <select class="field-input" @bind="draft.Priority">
+                                    @foreach (var p in Enum.GetValues<StoryPriority>())
+                                    {
+                                        <option value="@p">@p</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label>Notes</label>
+                                <textarea class="field-input" rows="3" @bind="draft.Notes"></textarea>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Status</span>
+                                <span class="chip @ChipClass(story.Status)">@story.Status</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Priority</span>
+                                <span class="chip @PriorityClass(story.Priority)">@story.Priority</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Category</span>
+                                <span class="info-value">@Show(story.Category)</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Program</span>
+                                <span class="info-value">@Show(story.Program)</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Deadline</span>
+                                <span class="info-value">@(story.Deadline?.ToString("dd/MM/yyyy HH:mm") ?? "-")</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Notes</span>
+                                <span class="info-value">@Show(story.Notes)</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- ===== Assignments ===== -->
+            <div class="card">
+                <div class="card-head">
+                    <h5 class="card-title">Assignments</h5>
+
+                    @if (editAssign)
+                    {
+                        <div class="head-actions">
+                            <button class="btn-text" @onclick="CancelAssign">Cancel</button>
+                            <button class="btn-save" @onclick="SaveAssignment">Save</button>
+                        </div>
+                    }
+                    else if (assignment is not null)
+                    {
+                        <button class="icon-btn" title="Edit assignment" @onclick="StartEditAssign">
+                            <iconify-icon icon="mdi:pencil-outline" width="18" height="18"></iconify-icon>
+                        </button>
+                    }
+                </div>
+
+                <div class="card-scroll">
+                    @if (editAssign)
+                    {
+                        <div class="form-stack">
+                            <div class="field-group">
+                                <label>Reporter</label>
+                                <select class="field-input" @bind="reporterIdInput">
+                                    <option value="">-- pilih reporter --</option>
+                                    @foreach (var r in reporters)
+                                    {
+                                        <option value="@r.Id">@r.Name</option>
+                                    }
+                                </select>
+                                @if (reporterIdError)
+                                {
+                                    <span class="field-error">Pilih salah satu reporter.</span>
+                                }
+                            </div>
+                            <div class="field-group">
+                                <label>Location</label>
+                                <input class="field-input" @bind="newAssignment.Location" />
+                            </div>
+                            <div class="field-group">
+                                <label>Brief</label>
+                                <textarea class="field-input" rows="4" @bind="newAssignment.Brief"></textarea>
+                            </div>
+                        </div>
+                    }
+                    else if (assignment is not null)
+                    {
+                        <ul class="assignment-list">
+                            <li class="assignment-row">
+                                <div class="assignment-info">
+                                    <span class="assignment-name">@Show(assignment.Location, "Assignment")</span>
+                                    <span class="assignment-meta">@Show(assignment.Brief, "Tidak ada brief")</span>
+                                </div>
+                            </li>
+                        </ul>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <p class="empty-text">Belum ada assignment untuk story ini.</p>
+                            <button class="btn-outline" @onclick="StartEditAssign">+ Create Assignment</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Script ===== -->
+        <div class="card script-card">
+            <div class="card-head">
+                <h5 class="card-title">Script</h5>
+
+                @if (editScript)
+                {
+                    <div class="head-actions">
+                        <button class="btn-text" @onclick="() => editScript = false">Cancel</button>
+                        <button class="btn-save" @onclick="SaveScript">Save</button>
+                    </div>
+                }
+                else
+                {
+                    <button class="icon-btn" title="Edit script" @onclick="StartEditScript">
+                        <iconify-icon icon="mdi:pencil-outline" width="18" height="18"></iconify-icon>
+                    </button>
+                }
+            </div>
+
+            <div class="card-scroll">
+                @if (editScript)
+                {
+                    <textarea class="field-input script-input" @bind="scriptDraft"
+                              placeholder="[ANCHOR - lead-in] ..."></textarea>
+                }
+                else if (!string.IsNullOrWhiteSpace(scriptText))
+                {
+                    <pre class="script-body">@scriptText</pre>
+                }
+                else
+                {
+                    <p class="empty-text">Belum ada script untuk story ini.</p>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private Story? story;
+    private Assignment? assignment;
+    private List<UserSummary> reporters = new();
+
+    private bool editDetail, editAssign, editScript;
+    private bool reporterIdError;
+
+    private UpdateStoryRequest draft = new();
+    private CreateAssignmentRequest newAssignment = new();
+    private string reporterIdInput = "";
+    private string scriptText = "";
+    private string scriptDraft = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        story = await StoryService.GetStoryByIdAsync(Id);
+        assignment = await AssignmentService.GetAssignmentForStoryAsync(Id);
+        reporters = await AssignmentService.GetReportersAsync();
+    }
+
+    // ----- Detail -----
+    private void StartEditDetail()
+    {
+        draft = new UpdateStoryRequest
+        {
+            Title = story!.Title,
+            Category = story.Category,
+            Program = story.Program,
+            Priority = story.Priority,
+            Notes = story.Notes
+        };
+        editDetail = true;
+    }
+
+    private void CancelDetail() => editDetail = false;
+
+    private async Task SaveDetail()
+    {
+        await StoryService.UpdateStoryAsync(Id, draft);
+        story = await StoryService.GetStoryByIdAsync(Id);
+        editDetail = false;
+    }
+
+    // ----- Assignment -----
+    private void StartEditAssign()
+    {
+        if (assignment is not null)
+        {
+            reporterIdInput = assignment.ReporterId.ToString();
+            newAssignment = new CreateAssignmentRequest
+            {
+                Location = assignment.Location,
+                Brief = assignment.Brief
+            };
+        }
+        editAssign = true;
+    }
+
+    private void CancelAssign()
+    {
+        reporterIdError = false;
+        editAssign = false;
+    }
+
+    private async Task SaveAssignment()
+    {
+        if (!Guid.TryParse(reporterIdInput, out var reporterId))
+        {
+            reporterIdError = true;
+            return;
+        }
+
+        reporterIdError = false;
+        newAssignment.StoryId = Id;
+        newAssignment.ReporterId = reporterId;
+
+        assignment = await AssignmentService.CreateAssignmentAsync(newAssignment);
+        story = await StoryService.GetStoryByIdAsync(Id);
+        editAssign = false;
+    }
+
+    // ----- Script -----
+    private void StartEditScript()
+    {
+        scriptDraft = scriptText;
+        editScript = true;
+    }
+
+    private void SaveScript()
+    {
+        scriptText = scriptDraft;
+        editScript = false;
+    }
+
+    private static string Show(string? value, string fallback = "-") =>
+        string.IsNullOrWhiteSpace(value) ? fallback : value;
+
+    private string ChipClass(StoryStatus status) => status switch
+    {
+        StoryStatus.Draft => "chip-draft",
+        StoryStatus.InReview => "chip-review",
+        StoryStatus.Approved => "chip-approved",
+        StoryStatus.Published => "chip-published",
+        StoryStatus.Killed => "chip-killed",
+        _ => "chip-assigned"
+    };
+
+    private string PriorityClass(StoryPriority priority) => priority switch
+    {
+        StoryPriority.Breaking => "chip-breaking",
+        StoryPriority.Urgent => "chip-urgent",
+        StoryPriority.High => "chip-high",
+        _ => "chip-normal"
+    };
+}

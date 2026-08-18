@@ -1,0 +1,162 @@
+Table user {
+  id uuid [pk]
+  name varchar
+  email varchar
+  created_at timestamp
+}
+
+Table role {
+  id uuid [pk]
+  name varchar
+}
+
+Table user_role {
+  user_id uuid
+  role_id uuid
+}
+
+Table assignment {
+  id uuid [pk]
+  story_id uuid
+  reporter_id uuid
+  location varchar
+  event varchar
+  deadline timestamp
+  brief text
+  notes text
+  status varchar
+}
+
+Table story {
+  id uuid [pk]
+  slug varchar
+  title varchar
+  headline varchar
+  category varchar
+  program varchar
+  priority varchar
+  status varchar
+  reporter_id uuid
+  producer_id uuid
+  assignment_id uuid
+  deadline timestamp
+  created_at timestamp
+  updated_at timestamp
+  notes text
+}
+
+Table story_media {
+  id uuid [pk]
+  story_id uuid
+  media_asset_id uuid
+  role varchar
+  sort_order int
+  added_at timestamp
+}
+
+Table media_asset {
+  id uuid [pk]
+  ingest_job_id uuid
+  filename varchar
+  original_filename varchar
+  storage_path varchar
+  file_size bigint
+  duration varchar
+  format varchar
+  codec varchar
+  resolution varchar
+  frame_rate varchar
+  thumbnail_path varchar
+  proxy_path varchar
+  ingest_status varchar
+  retention_status varchar
+  created_at timestamp
+}
+
+Table script {
+  id uuid [pk]
+  story_id uuid
+  created_at timestamp
+}
+
+Table script_version {
+  id uuid [pk]
+  script_id uuid
+  version_number int
+  author_id uuid
+  content text
+  word_count int
+  estimated_duration varchar
+  change_note text
+  created_at timestamp
+}
+
+Table approval {
+  id uuid [pk]
+  story_id uuid
+  script_version_id uuid
+  reviewer_id uuid
+  decision varchar
+  comment text
+  created_at timestamp
+}
+
+Table rundown {
+  id uuid [pk]
+  program varchar
+  air_date date
+  air_time time
+  status varchar
+  created_at timestamp
+}
+
+Table rundown_item {
+  id uuid [pk]
+  rundown_id uuid
+  story_id uuid
+  sort_order int
+  start_time time
+  duration varchar
+  status varchar
+}
+
+Table ingest_job {
+  id uuid [pk]
+  source_type varchar
+  status varchar
+  progress int
+  error_message text
+  created_at timestamp
+  completed_at timestamp
+}
+
+Table audit_log {
+  id uuid [pk]
+  user_id uuid
+  timestamp timestamp
+  action varchar
+  entity_type varchar
+  entity_id uuid
+  before_value text
+  after_value text
+}
+
+Ref: user_role.user_id > user.id
+Ref: user_role.role_id > role.id
+Ref: assignment.story_id > story.id
+Ref: assignment.reporter_id > user.id
+Ref: story.reporter_id > user.id
+Ref: story.producer_id > user.id
+Ref: story.assignment_id > assignment.id
+Ref: story_media.story_id > story.id
+Ref: story_media.media_asset_id > media_asset.id
+Ref: media_asset.ingest_job_id > ingest_job.id
+Ref: script.story_id > story.id
+Ref: script_version.script_id > script.id
+Ref: script_version.author_id > user.id
+Ref: approval.story_id > story.id
+Ref: approval.script_version_id > script_version.id
+Ref: approval.reviewer_id > user.id
+Ref: rundown_item.rundown_id > rundown.id
+Ref: rundown_item.story_id > story.id
+Ref: audit_log.user_id > user.id

@@ -1,0 +1,12 @@
+/Users/anindya/work/transtv/nrcs/src/Insert.Domain/bin/Debug/net10.0/Insert.Domain.deps.json
+/Users/anindya/work/transtv/nrcs/src/Insert.Domain/bin/Debug/net10.0/Insert.Domain.dll
+/Users/anindya/work/transtv/nrcs/src/Insert.Domain/bin/Debug/net10.0/Insert.Domain.pdb
+/Users/anindya/work/transtv/nrcs/src/Insert.Domain/obj/Debug/net10.0/Insert.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/Users/anindya/work/transtv/nrcs/src/Insert.Domain/obj/Debug/net10.0/Insert.Domain.AssemblyInfoInputs.cache
+/Users/anindya/work/transtv/nrcs/src/Insert.Domain/obj/Debug/net10.0/Insert.Domain.AssemblyInfo.cs
+/Users/anindya/work/transtv/nrcs/src/Insert.Domain/obj/Debug/net10.0/Insert.Domain.csproj.CoreCompileInputs.cache
+/Users/anindya/work/transtv/nrcs/src/Insert.Domain/obj/Debug/net10.0/Insert.Domain.sourcelink.json
+/Users/anindya/work/transtv/nrcs/src/Insert.Domain/obj/Debug/net10.0/Insert.Domain.dll
+/Users/anindya/work/transtv/nrcs/src/Insert.Domain/obj/Debug/net10.0/refint/Insert.Domain.dll
+/Users/anindya/work/transtv/nrcs/src/Insert.Domain/obj/Debug/net10.0/Insert.Domain.pdb
+/Users/anindya/work/transtv/nrcs/src/Insert.Domain/obj/Debug/net10.0/ref/Insert.Domain.dll

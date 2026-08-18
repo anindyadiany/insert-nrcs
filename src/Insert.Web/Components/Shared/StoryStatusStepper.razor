@@ -1,0 +1,35 @@
+<div class="stepper">
+    <div class="stepper-labels">
+        @for (var i = 0; i < Steps.Length; i++)
+        {
+            var isDone = i <= CurrentIndex;
+            <div class="stepper-label @(isDone ? "is-done" : "")">@Steps[i]</div>
+        }
+    </div>
+
+    <div class="stepper-track">
+        <div class="stepper-fill" style="width: @(FillPercent)%"></div>
+        @for (var i = 0; i <= CurrentIndex; i++)
+        {
+            var left = (i + 1) * 100.0 / Steps.Length;
+            <span class="stepper-dot" style="left: @(left.ToString(Culture))%"></span>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Status { get; set; } = "Draft";
+
+    private static readonly string[] Steps =
+        { "Draft", "Assigned", "In Review", "Approved", "Published", "Killed" };
+
+    private static readonly System.Globalization.CultureInfo Culture =
+        System.Globalization.CultureInfo.InvariantCulture;
+
+    private int CurrentIndex => Array.FindIndex(
+        Steps, s => string.Equals(s.Replace(" ", ""), Status?.Replace(" ", ""),
+                                  StringComparison.OrdinalIgnoreCase));
+
+    private string FillPercent =>
+        ((CurrentIndex + 1) * 100.0 / Steps.Length).ToString("0.##", Culture);
+}
