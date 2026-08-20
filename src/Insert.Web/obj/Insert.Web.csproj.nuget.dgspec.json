@@ -1056,6 +1056,9 @@
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
+              "/Users/anindya/work/transtv/nrcs/src/Insert.Application/Insert.Application.csproj": {
+                "projectPath": "/Users/anindya/work/transtv/nrcs/src/Insert.Application/Insert.Application.csproj"
+              },
               "/Users/anindya/work/transtv/nrcs/src/Insert.Domain/Insert.Domain.csproj": {
                 "projectPath": "/Users/anindya/work/transtv/nrcs/src/Insert.Domain/Insert.Domain.csproj"
               }

@@ -92,6 +92,112 @@ namespace Insert.Infrastructure.Migrations
                     b.ToTable("AuditLogs");
                 });
 
+            modelBuilder.Entity("Insert.Domain.Entities.IngestJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("OriginalFilename")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("Progress")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SourceFilePath")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("IngestJobs");
+                });
+
+            modelBuilder.Entity("Insert.Domain.Entities.MediaAsset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Checksum")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Codec")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("DurationSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Filename")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Format")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("FrameRate")
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid?>("IngestJobId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("IngestStatus")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("OriginalFilename")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ProxyPath")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Resolution")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("RetentionStatus")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("StoragePath")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ThumbnailPath")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MediaAssets");
+                });
+
             modelBuilder.Entity("Insert.Domain.Entities.Script", b =>
                 {
                     b.Property<Guid>("Id")
@@ -197,6 +303,32 @@ namespace Insert.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Stories");
+                });
+
+            modelBuilder.Entity("Insert.Domain.Entities.StoryMedia", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("AddedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("MediaAssetId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Role")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("StoryId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("StoryMedias");
                 });
 
             modelBuilder.Entity("Insert.Infrastructure.Identity.ApplicationRole", b =>

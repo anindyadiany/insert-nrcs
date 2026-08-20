@@ -17,6 +17,9 @@ public class InsertDbContext : IdentityDbContext<ApplicationUser, ApplicationRol
     public DbSet<Script> Scripts => Set<Script>();
     public DbSet<ScriptVersion> ScriptVersions => Set<ScriptVersion>();
 
+    public DbSet<IngestJob> IngestJobs => Set<IngestJob>();
+    public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
+    public DbSet<StoryMedia> StoryMedias => Set<StoryMedia>();
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -33,5 +36,11 @@ public class InsertDbContext : IdentityDbContext<ApplicationUser, ApplicationRol
         builder.Entity<Story>().Property(s => s.Priority).HasConversion<string>();
 
         builder.Entity<Assignment>().Property(a => a.Status).HasConversion<string>();
+
+        builder.Entity<IngestJob>().Property(j => j.Status).HasConversion<string>();
+        builder.Entity<MediaAsset>().Property(m => m.IngestStatus).HasConversion<string>();
+        builder.Entity<MediaAsset>().Property(m => m.RetentionStatus).HasConversion<string>();
+
+        
     }
 }

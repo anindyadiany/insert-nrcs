@@ -514,6 +514,7 @@
       },
       "Insert.Media/1.0.0": {
         "dependencies": {
+          "Insert.Application": "1.0.0",
           "Insert.Domain": "1.0.0"
         },
         "runtime": {

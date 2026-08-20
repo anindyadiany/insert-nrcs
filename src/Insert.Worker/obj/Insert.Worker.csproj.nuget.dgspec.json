@@ -1056,6 +1056,9 @@
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
+              "/Users/anindya/work/transtv/nrcs/src/Insert.Application/Insert.Application.csproj": {
+                "projectPath": "/Users/anindya/work/transtv/nrcs/src/Insert.Application/Insert.Application.csproj"
+              },
               "/Users/anindya/work/transtv/nrcs/src/Insert.Domain/Insert.Domain.csproj": {
                 "projectPath": "/Users/anindya/work/transtv/nrcs/src/Insert.Domain/Insert.Domain.csproj"
               }
@@ -1421,9 +1424,17 @@
         "net10.0": {
           "targetAlias": "net10.0",
           "dependencies": {
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
             "Microsoft.Extensions.Hosting": {
               "target": "Package",
               "version": "[10.0.3, )"
+            },
+            "Pomelo.EntityFrameworkCore.MySql": {
+              "target": "Package",
+              "version": "[9.0.0, )"
             }
           },
           "imports": [

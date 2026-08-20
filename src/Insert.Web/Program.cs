@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Components.Authorization;
 using Insert.Application.Stories;
 using Insert.Infrastructure.Stories;
+using Insert.Media;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,6 +48,11 @@ builder.Services.AddScoped<IScriptRepository, ScriptRepository>();
 builder.Services.AddScoped<ScriptService>();
 //6
 builder.Services.AddScoped<IUserLookupService, UserLookupService>();
+//7
+builder.Services.AddScoped<IIngestRepository, IngestRepository>();
+builder.Services.AddScoped<IngestService>();
+//8
+builder.Services.AddScoped<IMediaProcessor, FfmpegMediaProcessor>();
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
@@ -72,6 +78,16 @@ app.MapAdditionalIdentityEndpoints();   // ← NEW
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+app.MapGet("/media-thumbnail/{id:guid}", async (Guid id, InsertDbContext db) =>
+{
+    var asset = await db.MediaAssets.FindAsync(id);
+    if (asset?.ThumbnailPath is null || !File.Exists(asset.ThumbnailPath))
+        return Results.NotFound();
+
+    var bytes = await File.ReadAllBytesAsync(asset.ThumbnailPath);
+    return Results.File(bytes, "image/jpeg");
+});
 
 app.Run();
 

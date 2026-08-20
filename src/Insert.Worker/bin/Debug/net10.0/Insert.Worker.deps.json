@@ -11,7 +11,9 @@
           "Insert.Application": "1.0.0",
           "Insert.Infrastructure": "1.0.0",
           "Insert.Media": "1.0.0",
-          "Microsoft.Extensions.Hosting": "10.0.3"
+          "Microsoft.EntityFrameworkCore": "9.0.0",
+          "Microsoft.Extensions.Hosting": "10.0.3",
+          "Pomelo.EntityFrameworkCore.MySql": "9.0.0"
         },
         "runtime": {
           "Insert.Worker.dll": {}
@@ -577,6 +579,7 @@
       },
       "Insert.Media/1.0.0": {
         "dependencies": {
+          "Insert.Application": "1.0.0",
           "Insert.Domain": "1.0.0"
         },
         "runtime": {

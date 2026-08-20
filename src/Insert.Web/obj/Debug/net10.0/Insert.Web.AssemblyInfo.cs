@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Insert.Web")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3b4edc7340b9623dce33c90bf0d21d7edb7ed78a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6e882a2cebed091966127357268763b88dd1a929")]
 [assembly: System.Reflection.AssemblyProductAttribute("Insert.Web")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Insert.Web")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

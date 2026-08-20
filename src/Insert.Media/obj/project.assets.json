@@ -2,6 +2,19 @@
   "version": 3,
   "targets": {
     "net10.0": {
+      "Insert.Application/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "Insert.Domain": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/Insert.Application.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Insert.Application.dll": {}
+        }
+      },
       "Insert.Domain/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v10.0",
@@ -15,6 +28,11 @@
     }
   },
   "libraries": {
+    "Insert.Application/1.0.0": {
+      "type": "project",
+      "path": "../Insert.Application/Insert.Application.csproj",
+      "msbuildProject": "../Insert.Application/Insert.Application.csproj"
+    },
     "Insert.Domain/1.0.0": {
       "type": "project",
       "path": "../Insert.Domain/Insert.Domain.csproj",
@@ -23,6 +41,7 @@
   },
   "projectFileDependencyGroups": {
     "net10.0": [
+      "Insert.Application >= 1.0.0",
       "Insert.Domain >= 1.0.0"
     ]
   },
@@ -51,6 +70,9 @@
         "net10.0": {
           "targetAlias": "net10.0",
           "projectReferences": {
+            "/Users/anindya/work/transtv/nrcs/src/Insert.Application/Insert.Application.csproj": {
+              "projectPath": "/Users/anindya/work/transtv/nrcs/src/Insert.Application/Insert.Application.csproj"
+            },
             "/Users/anindya/work/transtv/nrcs/src/Insert.Domain/Insert.Domain.csproj": {
               "projectPath": "/Users/anindya/work/transtv/nrcs/src/Insert.Domain/Insert.Domain.csproj"
             }

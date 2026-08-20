@@ -1,0 +1,179 @@
+@page "/ingest"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using Insert.Application.Stories
+@using Insert.Domain.Entities
+@implements IAsyncDisposable
+@attribute [Authorize(Roles = "Reporter,IngestOperator,AssignmentDesk")]
+@inject IngestService IngestService
+
+<PageTitle>Media Ingest - INSERT NRCS</PageTitle>
+
+<div class="story-page">
+    <div class="stories-header">
+        <h1 class="story-title">Media ingest</h1>
+    </div>
+
+    <div class="card">
+        <label for="fileInput" class="dropzone">
+            <iconify-icon icon="mdi:cloud-upload-outline" width="28" height="28"></iconify-icon>
+            <span class="dropzone-title">
+                @(isUploading ? "Uploading..." : "Click to choose a video file")
+            </span>
+            <span class="dropzone-hint">MP4, MOV, MXF up to 2GB</span>
+        </label>
+        <InputFile id="fileInput" OnChange="HandleUpload" style="display:none" disabled="@isUploading" />
+
+        @if (uploadError is not null)
+        {
+            <p class="field-error">@uploadError</p>
+        }
+    </div>
+
+    <p class="queue-title">Queue</p>
+
+    @if (jobs is null)
+    {
+        <p class="loading">Loading...</p>
+    }
+    else if (!jobs.Any())
+    {
+        <div class="card">
+            <p class="empty-text">Belum ada file yang di-upload.</p>
+        </div>
+    }
+    else
+    {
+        <div class="job-list">
+            @foreach (var job in jobs)
+            {
+                <div class="card job-card">
+                    <div class="job-row">
+                        <span class="job-name">
+                            <iconify-icon icon="mdi:video-outline" width="16" height="16"></iconify-icon>
+                            @job.OriginalFilename
+                        </span>
+                        <span class="chip @JobChipClass(job.Status)">@job.Status</span>
+                    </div>
+
+                    @if (job.Status == IngestJobStatus.Processing)
+                    {
+                        <div class="job-progress">
+                            <div class="job-progress-fill" style="width:@(job.Progress)%"></div>
+                        </div>
+                        <p class="job-meta">@job.Progress%</p>
+                    }
+                    @if (job.Status == IngestJobStatus.Failed)
+                    {
+                        <p class="job-error">
+                            @job.ErrorMessage
+                            <button class="btn-text" @onclick="() => Retry(job.Id)">Retry</button>
+                        </p>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private List<IngestJob>? jobs;
+    private bool isUploading;
+    private string? uploadError;
+    private PeriodicTimer? timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshQueue();
+        _ = AutoRefreshLoop();
+    }
+
+    private async Task AutoRefreshLoop()
+    {
+        timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+        while (await timer.WaitForNextTickAsync())
+        {
+            try
+            {
+                await RefreshQueue();
+                await InvokeAsync(StateHasChanged);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Ingest auto-refresh] tick failed: {ex}");
+            }
+        }
+    }
+
+    private async Task RefreshQueue()
+    {
+        jobs = await IngestService.GetQueueAsync();
+    }
+
+    private async Task HandleUpload(InputFileChangeEventArgs e)
+    {
+        uploadError = null;
+        var file = e.File;
+
+        const long maxSize = 2L * 1024 * 1024 * 1024; // 2GB
+        if (file.Size > maxSize)
+        {
+            uploadError = "File terlalu besar (maks 2GB).";
+            return;
+        }
+
+        isUploading = true;
+        try
+        {
+            var user = (await AuthState!).User;
+            var idClaim = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(idClaim, out var userId)) return;
+
+            var incomingDir = "/Users/anindya/work/transtv/nrcs/IngestStorage/Incoming";
+            Directory.CreateDirectory(incomingDir);
+
+            var stagedPath = Path.Combine(incomingDir, $"{Guid.NewGuid()}{Path.GetExtension(file.Name)}");
+            await using (var stream = file.OpenReadStream(maxSize))
+            await using (var fileStream = File.Create(stagedPath))
+            {
+                await stream.CopyToAsync(fileStream);
+            }
+
+            await IngestService.CreateJobAsync(userId, stagedPath, file.Name);
+            await RefreshQueue();
+        }
+        catch (Exception ex)
+        {
+            uploadError = $"Upload gagal: {ex.Message}";
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+
+    private async Task Retry(Guid jobId)
+    {
+        await IngestService.RetryJobAsync(jobId);
+        await RefreshQueue();
+    }
+
+    private string JobChipClass(IngestJobStatus status) => status switch
+    {
+        IngestJobStatus.Queued => "chip-priority-normal",
+        IngestJobStatus.Processing => "chip-assigned",
+        IngestJobStatus.Completed => "chip-approved",
+        IngestJobStatus.Failed => "chip-killed",
+        _ => "chip-priority-normal"
+    };
+
+    public async ValueTask DisposeAsync()
+    {
+        timer?.Dispose();
+        await Task.CompletedTask;
+    }
+}

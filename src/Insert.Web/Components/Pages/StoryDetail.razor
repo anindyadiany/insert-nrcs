@@ -5,11 +5,13 @@
 @using Insert.Domain.Entities
 @using Insert.Web.Components.Shared
 @using System.Security.Claims
+@using System.Globalization
 @using Microsoft.AspNetCore.Components.Authorization
 @attribute [Authorize(Roles = "Reporter,Producer,AssignmentDesk")]
 @inject StoryService StoryService
 @inject AssignmentService AssignmentService
 @inject StoryWorkflowService WorkflowService
+@inject IngestService IngestService
 
 <PageTitle>@(story?.Title ?? "Story") - INSERT NRCS</PageTitle>
 
@@ -100,8 +102,8 @@
                             <div class="field-group">
                                 <label>Deadline</label>
                                 <input type="datetime-local" class="field-input"
-                                       value="@(draft.Deadline?.ToString("yyyy-MM-ddTHH:mm"))"
-                                       @onchange="OnStoryDeadlineChanged" />
+                                    value="@ToInputValue(draft.Deadline)"
+                                    @onchange="OnStoryDeadlineChanged" />
                             </div>
                             <div class="field-group">
                                 <label>Notes</label>
@@ -176,6 +178,49 @@
                     }
                 </div>
             </div>
+
+        </div>
+
+        <!-- ===== Media ===== -->
+        <div class="card script-card">
+            <div class="media-layout">
+                <div class="media-form">
+                    <h5 class="card-title media-col-title">Media</h5>
+                    <select class="field-input" @bind="selectedAssetId">
+                        <option value="">-- pilih media Ready --</option>
+                        @foreach (var asset in availableAssets)
+                        {
+                            <option value="@asset.Id">@asset.OriginalFilename</option>
+                        }
+                    </select>
+                    <input class="field-input" @bind="mediaRoleInput" placeholder="Role (interview, b-roll, standup...)" />
+                    <button class="btn-outline" @onclick="AttachMedia">+ Attach Media</button>
+                </div>
+
+                <div class="media-preview">
+                    <h5 class="card-title media-col-title">Preview</h5>
+                    @if (storyMedia.Any())
+                    {
+                        <div class="story-media-grid">
+                            @foreach (var link in storyMedia)
+                            {
+                                var asset = attachedAssets.FirstOrDefault(a => a.Id == link.MediaAssetId);
+                                <div class="story-media-thumb">
+                                    @if (asset?.ThumbnailPath is not null)
+                                    {
+                                        <img src="/media-thumbnail/@asset.Id" alt="@asset.OriginalFilename" />
+                                    }
+                                    <p class="story-media-caption">@(link.Role ?? asset?.OriginalFilename)</p>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="empty-text">Belum ada media untuk story ini.</p>
+                    }
+                </div>
+            </div>
         </div>
 
         @if (editAssign)
@@ -215,7 +260,7 @@
                         <div class="field-group">
                             <label>Deadline</label>
                             <input type="datetime-local" class="field-input"
-                                   value="@(newAssignment.Deadline?.ToString("yyyy-MM-ddTHH:mm"))"
+                                   value="@ToInputValue(newAssignment.Deadline)"
                                    @onchange="OnDeadlineChanged" />
                         </div>
                         <div class="field-group">
@@ -282,6 +327,12 @@
     private Assignment? assignment;
     private List<UserSummary> reporters = new();
 
+    private List<StoryMedia> storyMedia = new();
+    private List<MediaAsset> availableAssets = new();
+    private List<MediaAsset> attachedAssets = new();
+    private string selectedAssetId = "";
+    private string mediaRoleInput = "";
+
     private static readonly Dictionary<StoryStatus, StoryStatus> PrimaryNext = new()
     {
         [StoryStatus.Draft] = StoryStatus.Assigned,
@@ -311,6 +362,10 @@
         assignment = await AssignmentService.GetAssignmentForStoryAsync(Id);
         reporters = await AssignmentService.GetReportersAsync();
         RefreshNextStatuses();
+
+        storyMedia = await IngestService.GetStoryMediaAsync(Id);
+        availableAssets = await IngestService.GetAvailableAssetsAsync();
+        attachedAssets = await IngestService.GetAssetsByIdsAsync(storyMedia.Select(sm => sm.MediaAssetId).ToList());
     }
 
     private void RefreshNextStatuses()
@@ -377,9 +432,13 @@
                 Notes = assignment.Notes
             };
         }
+        else
+        {
+            reporterIdInput = "";
+            newAssignment = new CreateAssignmentRequest();
+        }
         editAssign = true;
     }
-
     private void CancelAssign()
     {
         reporterIdError = false;
@@ -441,6 +500,18 @@
         editScript = false;
     }
 
+    // ----- Media -----
+    private async Task AttachMedia()
+    {
+        if (!Guid.TryParse(selectedAssetId, out var assetId)) return;
+        await IngestService.AttachMediaToStoryAsync(Id, assetId, mediaRoleInput);
+        storyMedia = await IngestService.GetStoryMediaAsync(Id);
+        availableAssets = await IngestService.GetAvailableAssetsAsync();
+        attachedAssets = await IngestService.GetAssetsByIdsAsync(storyMedia.Select(sm => sm.MediaAssetId).ToList());
+        selectedAssetId = "";
+        mediaRoleInput = "";
+    }
+
     private static string Show(string? value, string fallback = "-") =>
         string.IsNullOrWhiteSpace(value) ? fallback : value;
 
@@ -450,6 +521,10 @@
         StoryStatus.InReview => "In Review",
         _ => status.ToString()
     };
+
+    private static string ToInputValue(DateTime? dt) =>
+        dt is null ? "" :
+        $"{dt.Value.Year:D4}-{dt.Value.Month:D2}-{dt.Value.Day:D2}T{dt.Value.Hour:D2}:{dt.Value.Minute:D2}";
 
     private string ChipClass(StoryStatus status) => status switch
     {
@@ -469,3 +544,5 @@
         _ => "chip-normal"
     };
 }
+
+

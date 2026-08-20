@@ -8,10 +8,22 @@
     ".NETCoreApp,Version=v10.0": {
       "Insert.Media/1.0.0": {
         "dependencies": {
+          "Insert.Application": "1.0.0",
           "Insert.Domain": "1.0.0"
         },
         "runtime": {
           "Insert.Media.dll": {}
+        }
+      },
+      "Insert.Application/1.0.0": {
+        "dependencies": {
+          "Insert.Domain": "1.0.0"
+        },
+        "runtime": {
+          "Insert.Application.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
         }
       },
       "Insert.Domain/1.0.0": {
@@ -26,6 +38,11 @@
   },
   "libraries": {
     "Insert.Media/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Insert.Application/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
