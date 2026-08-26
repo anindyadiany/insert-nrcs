@@ -8,10 +8,13 @@
 @using System.Globalization
 @using Microsoft.AspNetCore.Components.Authorization
 @attribute [Authorize(Roles = "Reporter,Producer,AssignmentDesk")]
+@implements IDisposable
 @inject StoryService StoryService
 @inject AssignmentService AssignmentService
 @inject StoryWorkflowService WorkflowService
 @inject IngestService IngestService
+@inject ScriptService ScriptService
+@inject ApprovalService ApprovalService
 
 <PageTitle>@(story?.Title ?? "Story") - INSERT NRCS</PageTitle>
 
@@ -50,6 +53,18 @@
         <div class="stepper-wrap">
             <StoryStatusStepper Status="@story.Status.ToString()" />
         </div>
+
+        @if (LatestRevisionRequest is not null)
+        {
+            <div class="revision-alert">
+                <div class="revision-alert-head">
+                    <iconify-icon icon="mdi:arrow-u-left-top" width="18" height="18"></iconify-icon>
+                    <span class="revision-label">Revision Requested</span>
+                    <span class="revision-date">@LatestRevisionRequest.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")</span>
+                </div>
+                <p class="revision-comment">@LatestRevisionRequest.Comment</p>
+            </div>
+        }
 
         <div class="detail-grid">
             <!-- ===== Detail ===== -->
@@ -187,7 +202,7 @@
                 <div class="media-form">
                     <h5 class="card-title media-col-title">Media</h5>
                     <select class="field-input" @bind="selectedAssetId">
-                        <option value="">-- pilih media Ready --</option>
+                        <option value="">Choose Media</option>
                         @foreach (var asset in availableAssets)
                         {
                             <option value="@asset.Id">@asset.OriginalFilename</option>
@@ -205,12 +220,27 @@
                             @foreach (var link in storyMedia)
                             {
                                 var asset = attachedAssets.FirstOrDefault(a => a.Id == link.MediaAssetId);
-                                <div class="story-media-thumb">
-                                    @if (asset?.ThumbnailPath is not null)
-                                    {
-                                        <img src="/media-thumbnail/@asset.Id" alt="@asset.OriginalFilename" />
-                                    }
-                                    <p class="story-media-caption">@(link.Role ?? asset?.OriginalFilename)</p>
+                                <div class="story-media-item">
+                                    <div class="story-media-thumb">
+                                        @if (asset?.ThumbnailPath is not null)
+                                        {
+                                            <img src="/media-thumbnail/@asset.Id" alt="@asset.OriginalFilename" />
+                                        }
+                                        @if (asset?.DurationSeconds is not null)
+                                        {
+                                            <span class="story-media-duration">@FormatDuration(asset.DurationSeconds.Value)</span>
+                                        }
+                                    </div>
+                                    <div class="story-media-info">
+                                        @if (!string.IsNullOrWhiteSpace(link.Role))
+                                        {
+                                            <span class="story-media-role">@link.Role</span>
+                                        }
+                                        <p class="story-media-filename" title="@asset?.OriginalFilename">@asset?.OriginalFilename</p>
+                                        <p class="story-media-meta">
+                                            @(asset?.Resolution ?? "-") &middot; @FormatSize(asset?.FileSize ?? 0)
+                                        </p>
+                                    </div>
                                 </div>
                             }
                         </div>
@@ -222,6 +252,61 @@
                 </div>
             </div>
         </div>
+
+        <AuthorizeView Roles="Producer" Context="approvalCtx">
+    @if (story.Status == StoryStatus.InReview)
+    {
+        <div class="card">
+            <div class="card-head">
+                <h5 class="card-title">Review</h5>
+            </div>
+
+            <div class="form-stack">
+                <div class="field-group">
+                    <label>Comment</label>
+                    <textarea class="field-input" rows="3" @bind="approvalComment"
+                              placeholder="Note for reporter (optional for approve, required for revision/reject)"></textarea>
+                    @if (approvalError is not null)
+                    {
+                        <span class="field-error">@approvalError</span>
+                    }
+                </div>
+                <div class="approval-actions">
+                    <button class="btn-primary" @onclick="() => SubmitDecision(ApprovalDecision.Approved)">
+                        Approve
+                    </button>
+                    <button class="btn-outline" @onclick="() => SubmitDecision(ApprovalDecision.Rejected)">
+                        Reject
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</AuthorizeView>
+
+@if (approvalHistory.Any())
+{
+    <div class="card">
+        <div class="card-head">
+            <h5 class="card-title">Review History</h5>
+        </div>
+        <div class="approval-history">
+            @foreach (var a in approvalHistory)
+            {
+                <div class="approval-item">
+                    <div class="approval-head">
+                        <span class="chip @DecisionChipClass(a.Decision)">@FormatDecision(a.Decision)</span>
+                        <span class="version-date">@a.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")</span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(a.Comment))
+                    {
+                        <p class="approval-comment">@a.Comment</p>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
 
         @if (editAssign)
         {
@@ -285,43 +370,85 @@
         <div class="card script-card">
             <div class="card-head">
                 <h5 class="card-title">Script</h5>
-
-                @if (editScript)
-                {
-                    <div class="head-actions">
-                        <button class="btn-text" @onclick="() => editScript = false">Cancel</button>
-                        <button class="btn-save" @onclick="SaveScript">Save</button>
-                    </div>
-                }
-                else
-                {
-                    <button class="icon-btn" title="Edit script" @onclick="StartEditScript">
-                        <iconify-icon icon="mdi:pencil-outline" width="18" height="18"></iconify-icon>
+                <div class="head-actions">
+                    <span class="autosave-status">@autosaveStatus</span>
+                    <button class="btn-text" @onclick="() => showVersions = !showVersions">
+                        Versions (@(scriptSummary?.Versions.Count ?? 0))
                     </button>
-                }
+                    <button class="btn-save" @onclick="SaveVersion" disabled="@(!CanSaveVersion)">Save Version</button>
+                </div>
             </div>
 
-            <div class="card-scroll">
-                @if (editScript)
+            <div class="script-meta-row">
+                <span>@liveWordCount kata</span>
+                <span>&middot;</span>
+                <span>est. @FormatDuration(ScriptService.EstimateSeconds(liveWordCount))</span>
+            </div>
+
+            <div class="script-body-wrap">
+<textarea class="field-input script-input"
+          value="@scriptDraft"
+          @oninput="OnScriptInput"
+          placeholder="SLUG: PUBLIC TRANSPORT&#10;DATE: 21 AUGUST 2026&#10;DURATION: 01:30&#10;&#10;ANCHOR INTRO&#10;The government has announced a new program...&#10;&#10;VO - OVER B-ROLL&#10;The transportation ministry says...&#10;&#10;SOT - ARDI PRATAMA / TRANSPORTATION OFFICIAL&#10;&quot;We want public transportation to become...&quot;"></textarea>
+
+            @if (selectedVersion is not null)
+            {
+                <div class="version-viewer">
+                    <div class="version-viewer-head">
+                        <span class="version-number">v@(selectedVersion.VersionNumber)</span>
+                        <div class="head-actions">
+                            <button class="btn-text" @onclick="RestoreVersion">Restore this Version</button>
+                            <button class="icon-btn" @onclick="() => selectedVersion = null">
+                                <iconify-icon icon="mdi:close" width="18" height="18"></iconify-icon>
+                            </button>
+                        </div>
+                    </div>
+                    <pre class="version-content">@selectedVersion.Content</pre>
+                </div>
+            }
+
+                @if (showVersions)
                 {
-                    <textarea class="field-input script-input" @bind="scriptDraft"
-                              placeholder="[ANCHOR - lead-in] ..."></textarea>
-                }
-                else if (!string.IsNullOrWhiteSpace(scriptText))
-                {
-                    <pre class="script-body">@scriptText</pre>
-                }
-                else
-                {
-                    <p class="empty-text">Belum ada script untuk story ini.</p>
+                    <div class="version-list">
+                        <p class="version-list-title">Version History</p>
+                        @if (scriptSummary?.Versions.Any() == true)
+                        {
+                           @foreach (var v in scriptSummary.Versions)
+                                {
+                                    <div class="version-item @(selectedVersionId == v.Id ? "is-selected" : "")"
+                                        @onclick="() => SelectVersion(v)">
+                                        <div class="version-head">
+                                            <span class="version-number">v@(v.VersionNumber)</span>
+                                            <span class="version-date">@v.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")</span>
+                                        </div>
+                                        <p class="version-meta">
+                                            @v.WordCount kata &middot; @FormatDuration(v.EstimatedDurationSeconds)
+                                        </p>
+                                        @if (!string.IsNullOrWhiteSpace(v.ChangeNote))
+                                        {
+                                            <p class="version-note">@v.ChangeNote</p>
+                                        }
+                                    </div>
+                                }
+                        }
+                        else
+                        {
+                            <p class="empty-text">Belum ada versi tersimpan.</p>
+                        }
+                    </div>
                 }
             </div>
         </div>
     }
 </div>
 
+
+
 @code {
+    
     [Parameter] public Guid Id { get; set; }
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
 
     private Story? story;
     private Assignment? assignment;
@@ -332,6 +459,33 @@
     private List<MediaAsset> attachedAssets = new();
     private string selectedAssetId = "";
     private string mediaRoleInput = "";
+
+    private ScriptSummary? scriptSummary;
+    private string scriptDraft = "";
+    private int liveWordCount;
+    private string autosaveStatus = "";
+    private bool showVersions;
+    private CancellationTokenSource? autosaveCts;
+
+    private ScriptVersion? selectedVersion;
+private Guid? selectedVersionId => selectedVersion?.Id;
+
+private void SelectVersion(ScriptVersion version) =>
+    selectedVersion = selectedVersion?.Id == version.Id ? null : version;
+
+private async Task RestoreVersion()
+{
+    if (selectedVersion is null) return;
+
+    var userId = await GetCurrentUserIdAsync();
+    if (userId is null) return;
+
+    scriptDraft = selectedVersion.Content;
+    liveWordCount = ScriptService.CountWords(scriptDraft);
+    await ScriptService.SaveDraftAsync(Id, scriptDraft, userId.Value);
+    autosaveStatus = $"Dipulihkan dari v{selectedVersion.VersionNumber}";
+    selectedVersion = null;
+}
 
     private static readonly Dictionary<StoryStatus, StoryStatus> PrimaryNext = new()
     {
@@ -345,16 +499,12 @@
     private StoryStatus? primaryNextStatus;
     private bool canKill;
 
-    private bool editDetail, editAssign, editScript;
+    private bool editDetail, editAssign;
     private bool reporterIdError;
 
     private UpdateStoryRequest draft = new();
     private CreateAssignmentRequest newAssignment = new();
     private string reporterIdInput = "";
-    private string scriptText = "";
-    private string scriptDraft = "";
-
-    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -366,21 +516,27 @@
         storyMedia = await IngestService.GetStoryMediaAsync(Id);
         availableAssets = await IngestService.GetAvailableAssetsAsync();
         attachedAssets = await IngestService.GetAssetsByIdsAsync(storyMedia.Select(sm => sm.MediaAssetId).ToList());
+        approvalHistory = await ApprovalService.GetHistoryAsync(Id);
+
+        await LoadScript();
     }
 
-    private void RefreshNextStatuses()
-    {
-        primaryNextStatus = PrimaryNext.TryGetValue(story!.Status, out var next) ? next : null;
-        canKill = WorkflowService.CanTransition(story.Status, StoryStatus.Killed);
-    }
+private void RefreshNextStatuses()
+{
+    primaryNextStatus = PrimaryNext.TryGetValue(story!.Status, out var next) ? next : null;
+
+    // InReview → Approved must go through the approval card, not the shortcut button
+    if (story.Status == StoryStatus.InReview) primaryNextStatus = null;
+
+    canKill = WorkflowService.CanTransition(story.Status, StoryStatus.Killed);
+}
 
     private async Task ChangeStatus(StoryStatus newStatus)
     {
-        var user = (await AuthState!).User;
-        var idClaim = user.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!Guid.TryParse(idClaim, out var userId)) return;
+        var userId = await GetCurrentUserIdAsync();
+        if (userId is null) return;
 
-        await StoryService.ChangeStatusAsync(story!.Id, newStatus, userId);
+        await StoryService.ChangeStatusAsync(story!.Id, newStatus, userId.Value);
         story = await StoryService.GetStoryByIdAsync(Id);
         RefreshNextStatuses();
     }
@@ -439,6 +595,7 @@
         }
         editAssign = true;
     }
+
     private void CancelAssign()
     {
         reporterIdError = false;
@@ -487,19 +644,6 @@
             newAssignment.Deadline = null;
     }
 
-    // ----- Script -----
-    private void StartEditScript()
-    {
-        scriptDraft = scriptText;
-        editScript = true;
-    }
-
-    private void SaveScript()
-    {
-        scriptText = scriptDraft;
-        editScript = false;
-    }
-
     // ----- Media -----
     private async Task AttachMedia()
     {
@@ -510,6 +654,71 @@
         attachedAssets = await IngestService.GetAssetsByIdsAsync(storyMedia.Select(sm => sm.MediaAssetId).ToList());
         selectedAssetId = "";
         mediaRoleInput = "";
+    }
+
+    // ----- Script -----
+    private bool CanSaveVersion => !string.IsNullOrWhiteSpace(scriptDraft);
+
+    private async Task LoadScript()
+    {
+        scriptSummary = await ScriptService.GetForStoryAsync(Id);
+        scriptDraft = scriptSummary.Script?.Content ?? "";
+        liveWordCount = ScriptService.CountWords(scriptDraft);
+    }
+
+    private void OnScriptInput(ChangeEventArgs e)
+    {
+        scriptDraft = e.Value?.ToString() ?? "";
+        liveWordCount = ScriptService.CountWords(scriptDraft);
+        autosaveStatus = "Mengetik...";
+
+        autosaveCts?.Cancel();
+        autosaveCts = new CancellationTokenSource();
+        var token = autosaveCts.Token;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(1500, token);
+                await AutosaveAsync();
+            }
+            catch (TaskCanceledException) { }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Script autosave] failed: {ex}");
+            }
+        });
+    }
+
+    private async Task AutosaveAsync()
+    {
+        var userId = await GetCurrentUserIdAsync();
+        if (userId is null) return;
+
+        await ScriptService.SaveDraftAsync(Id, scriptDraft, userId.Value);
+        autosaveStatus = $"Tersimpan {DateTime.Now:HH:mm:ss}";
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SaveVersion()
+    {
+        var userId = await GetCurrentUserIdAsync();
+        if (userId is null) return;
+
+        await ScriptService.SaveDraftAsync(Id, scriptDraft, userId.Value);
+        await ScriptService.SaveVersionAsync(Id, userId.Value);
+        await LoadScript();
+        autosaveStatus = "Versi tersimpan";
+        showVersions = true;
+    }
+
+    // ----- Helpers -----
+    private async Task<Guid?> GetCurrentUserIdAsync()
+    {
+        var user = (await AuthState!).User;
+        var idClaim = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.TryParse(idClaim, out var userId) ? userId : null;
     }
 
     private static string Show(string? value, string fallback = "-") =>
@@ -525,6 +734,17 @@
     private static string ToInputValue(DateTime? dt) =>
         dt is null ? "" :
         $"{dt.Value.Year:D4}-{dt.Value.Month:D2}-{dt.Value.Day:D2}T{dt.Value.Hour:D2}:{dt.Value.Minute:D2}";
+
+    private static string FormatDuration(int seconds) =>
+        $"{seconds / 60}:{seconds % 60:D2}";
+
+    private static string FormatSize(long bytes)
+    {
+        if (bytes >= 1_073_741_824) return $"{bytes / 1_073_741_824.0:0.#} GB";
+        if (bytes >= 1_048_576) return $"{bytes / 1_048_576.0:0.#} MB";
+        if (bytes >= 1024) return $"{bytes / 1024.0:0.#} KB";
+        return $"{bytes} B";
+    }
 
     private string ChipClass(StoryStatus status) => status switch
     {
@@ -543,6 +763,53 @@
         StoryPriority.High => "chip-high",
         _ => "chip-normal"
     };
+
+    public void Dispose() => autosaveCts?.Cancel();
+
+    private List<Approval> approvalHistory = new();
+    private string approvalComment = "";
+    private string? approvalError;
+
+    private async Task SubmitDecision(ApprovalDecision decision)
+    {
+        approvalError = null;
+
+        // comment required when sending back or killing — the reporter needs to know why
+        if (decision != ApprovalDecision.Approved && string.IsNullOrWhiteSpace(approvalComment))
+        {
+            approvalError = "Komentar wajib diisi untuk revisi atau reject.";
+            return;
+        }
+
+        var userId = await GetCurrentUserIdAsync();
+        if (userId is null) return;
+
+        await ApprovalService.SubmitDecisionAsync(Id, userId.Value, decision, approvalComment);
+
+        approvalComment = "";
+        story = await StoryService.GetStoryByIdAsync(Id);
+        approvalHistory = await ApprovalService.GetHistoryAsync(Id);
+        RefreshNextStatuses();
+    }
+
+    private static string FormatDecision(ApprovalDecision d) => d switch
+    {
+        ApprovalDecision.Approved => "Approved",
+        ApprovalDecision.Rejected => "Revision Requested",
+        _ => "Pending"
+    };
+
+    private static string DecisionChipClass(ApprovalDecision d) => d switch
+    {
+        ApprovalDecision.Approved => "chip-approved",
+        ApprovalDecision.ChangesRequested => "chip-review",
+        ApprovalDecision.Rejected => "chip-killed",
+        _ => "chip-draft"
+    };
+
+    private Approval? LatestRevisionRequest =>
+        story?.Status == StoryStatus.InProgress
+        && approvalHistory.FirstOrDefault() is { Decision: ApprovalDecision.Rejected } latest
+            ? latest
+            : null;
 }
-
-

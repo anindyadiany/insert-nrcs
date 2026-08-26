@@ -53,6 +53,9 @@ builder.Services.AddScoped<IIngestRepository, IngestRepository>();
 builder.Services.AddScoped<IngestService>();
 //8
 builder.Services.AddScoped<IMediaProcessor, FfmpegMediaProcessor>();
+//9
+builder.Services.AddScoped<IApprovalRepository, ApprovalRepository>();
+builder.Services.AddScoped<ApprovalService>();
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {

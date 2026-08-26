@@ -11,3 +11,4 @@ public interface IScriptRepository
     Task AddVersionAsync(ScriptVersion version);
     Task SaveChangesAsync();
 }
+

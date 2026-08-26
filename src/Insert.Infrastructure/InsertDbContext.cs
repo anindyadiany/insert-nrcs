@@ -20,6 +20,8 @@ public class InsertDbContext : IdentityDbContext<ApplicationUser, ApplicationRol
     public DbSet<IngestJob> IngestJobs => Set<IngestJob>();
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
     public DbSet<StoryMedia> StoryMedias => Set<StoryMedia>();
+
+    public DbSet<Approval> Approvals => Set<Approval>();
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -41,6 +43,6 @@ public class InsertDbContext : IdentityDbContext<ApplicationUser, ApplicationRol
         builder.Entity<MediaAsset>().Property(m => m.IngestStatus).HasConversion<string>();
         builder.Entity<MediaAsset>().Property(m => m.RetentionStatus).HasConversion<string>();
 
-        
+        builder.Entity<Approval>().Property(a => a.Decision).HasConversion<string>();
     }
 }

@@ -126,6 +126,7 @@
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/scopedcss/bundle/Insert.Web.styles.css
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/scopedcss/projectbundle/Insert.Web.bundle.scp.css
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/8rwk6lu14x-{0}-w7mf952350-w7mf952350.gz
+/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/wu9wsty3xk-{0}-r73be8plyq-r73be8plyq.gz
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/guce4awcw4-{0}-jx9vjjx00f-jx9vjjx00f.gz
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/x8uj0z3amy-{0}-j28ktbm10z-j28ktbm10z.gz
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/y5z6a1bfu1-{0}-bqjiyaj88i-bqjiyaj88i.gz
@@ -186,6 +187,5 @@
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/Insert.Web.pdb
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/Insert.Web.genruntimeconfig.cache
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/ref/Insert.Web.dll
-/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/wu9wsty3xk-{0}-4r3zoq82dw-4r3zoq82dw.gz
-/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/n32og7p8pl-{0}-7i2k6u3lxj-7i2k6u3lxj.gz
-/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/6ekz0inspa-{0}-7i2k6u3lxj-7i2k6u3lxj.gz
+/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/n32og7p8pl-{0}-papd4x6tqx-papd4x6tqx.gz
+/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/6ekz0inspa-{0}-papd4x6tqx-papd4x6tqx.gz
