@@ -110,6 +110,8 @@
 }
 .assignment-row:hover { border-color: #0090D4; }
 
+.assignment-row.is-clickable { cursor: pointer; }
+
 .assignment-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .assignment-name { font-size: 14px; color: #28282B; }
 .assignment-meta {
@@ -515,3 +517,13 @@
     line-height: 1.5;
     color: #5A3D0F;
 }
+.assignment-flash {
+    animation: assignment-highlight 1.8s ease;
+}
+
+@keyframes assignment-highlight {
+    0%   { box-shadow: 0 0 0 3px rgba(0, 84, 158, .35); background-color: #EAF3FC; }
+    100% { box-shadow: 0 0 0 0 rgba(0, 84, 158, 0); background-color: transparent; }
+}
+
+.assignment-row.is-clickable { cursor: pointer; }

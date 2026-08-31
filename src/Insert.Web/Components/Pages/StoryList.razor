@@ -1,11 +1,13 @@
 @page "/stories"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using Insert.Application.Stories
 @using Insert.Domain.Entities
 @attribute [Authorize(Roles = "Reporter,Producer,AssignmentDesk")]
 
 @inject StoryService StoryService
+@inject AssignmentService AssignmentService
 @inject NavigationManager Nav
 
 <PageTitle>Stories - INSERT NRCS</PageTitle>
@@ -63,14 +65,14 @@
     }
     else
     {
-        <table class="stories-table">
+        <table class="stories-table story-list-table">
             <thead>
                 <tr>
                     <th>Title</th>
                     <th>Status</th>
                     <th>Priority</th>
                     <th>Deadline</th>
-                    <th class="col-actions"></th>
+                    <th>Assignment</th>
                 </tr>
             </thead>
             <tbody>
@@ -82,10 +84,18 @@
                         <td><span class="chip @ChipClass(story.Status)">@story.Status</span></td>
                         <td><span class="chip @PriorityChipClass(story.Priority)">@story.Priority</span></td>
                         <td>@(story.Deadline?.ToString("dd/MM/yyyy") ?? "-")</td>
-                        <td class="col-actions" @onclick:stopPropagation="true">
-                            <button class="icon-btn" title="Edit" @onclick="() => OpenEdit(id)">
-                                <iconify-icon icon="mdi:pencil-outline" width="20" height="20"></iconify-icon>
-                            </button>
+                        <td @onclick:stopPropagation="true">
+                            @if (assignmentsByStoryId.TryGetValue(id, out var a))
+                            {
+                                <div class="assignment-info" style="cursor:pointer" @onclick="() => OpenAssignment(id)">
+                                    <span class="assignment-name">@Show(a.Location, "Assignment")</span>
+                                    <span class="assignment-meta">Deadline: @(a.Deadline?.ToString("dd/MM/yyyy HH:mm") ?? "-")</span>
+                                </div>
+                            }
+                            else if (canManageAssignment)
+                            {
+                                <span class="assignment-empty-link" @onclick="() => OpenAssignment(id)">+ Create Assignment</span>
+                            }
                         </td>
                     </tr>
                 }
@@ -95,13 +105,25 @@
 </div>
 
 @code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
     private List<Story>? stories;
+    private Dictionary<Guid, Assignment> assignmentsByStoryId = new();
     private bool showForm = false;
+    private bool canManageAssignment;
     private CreateStoryRequest newStory = new();
 
     protected override async Task OnInitializedAsync()
     {
+        var user = (await AuthState!).User;
+        canManageAssignment = user.IsInRole("AssignmentDesk") || user.IsInRole("Producer");
+
         stories = await StoryService.GetAllStoriesAsync();
+
+        var allAssignments = await AssignmentService.GetAllAssignmentsAsync();
+        assignmentsByStoryId = allAssignments
+            .GroupBy(a => a.StoryId)
+            .ToDictionary(g => g.Key, g => g.First());
     }
 
     private async Task CreateStory()
@@ -114,7 +136,10 @@
 
     private void OpenDetail(Guid id) => Nav.NavigateTo($"/stories/{id}");
 
-    private void OpenEdit(Guid id) => Nav.NavigateTo($"/stories/{id}/edit");
+    private void OpenAssignment(Guid id) => Nav.NavigateTo($"/stories/{id}?highlight=assignment#assignment-card");
+
+    private static string Show(string? value, string fallback = "-") =>
+        string.IsNullOrWhiteSpace(value) ? fallback : value;
 
     private string ChipClass(StoryStatus status) => status switch
     {

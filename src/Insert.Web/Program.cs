@@ -56,6 +56,9 @@ builder.Services.AddScoped<IMediaProcessor, FfmpegMediaProcessor>();
 //9
 builder.Services.AddScoped<IApprovalRepository, ApprovalRepository>();
 builder.Services.AddScoped<ApprovalService>();
+//10
+builder.Services.AddScoped<IRundownRepository, RundownRepository>();
+builder.Services.AddScoped<RundownService>();
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
@@ -76,7 +79,7 @@ app.UseAuthorization();
 
 app.UseAntiforgery();
 
-app.MapAdditionalIdentityEndpoints();   // ← NEW
+app.MapAdditionalIdentityEndpoints();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()

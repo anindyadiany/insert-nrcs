@@ -158,24 +158,18 @@
                 </div>
             </div>
 
-            <!-- ===== Assignments ===== -->
-            <div class="card">
-                <div class="card-head">
-                    <h5 class="card-title">Assignments</h5>
+<!-- ===== Assignments ===== -->
+<div class="card @(HighlightTarget == "assignment" ? "assignment-flash" : "")" id="assignment-card">
+    <div class="card-head">
+        <h5 class="card-title">Assignments</h5>
+    </div>
 
-                    @if (assignment is not null)
-                    {
-                        <button class="icon-btn" title="Edit assignment" @onclick="StartEditAssign">
-                            <iconify-icon icon="mdi:pencil-outline" width="18" height="18"></iconify-icon>
-                        </button>
-                    }
-                </div>
-
-                <div class="card-scroll">
-                    @if (assignment is not null)
-                    {
-                        <ul class="assignment-list">
-                            <li class="assignment-row" @onclick="StartEditAssign" style="cursor:pointer">
+    <div class="card-scroll">
+        @if (assignment is not null)
+        {
+            <ul class="assignment-list">
+                <li class="assignment-row @(canManageAssignment ? "is-clickable" : "")"
+                    @onclick="StartEditAssign">
                                 <div class="assignment-info">
                                     <span class="assignment-name">@Show(assignment.Location, "Assignment")</span>
                                     <span class="assignment-meta">@Show(assignment.Brief, "Tidak ada brief")</span>
@@ -188,7 +182,10 @@
                     {
                         <div class="empty-state">
                             <p class="empty-text">Belum ada assignment untuk story ini.</p>
-                            <button class="btn-outline" @onclick="StartEditAssign">+ Create Assignment</button>
+                            @if (canManageAssignment)
+                            {
+                                <button class="btn-outline" @onclick="StartEditAssign">+ Create Assignment</button>
+                            }
                         </div>
                     }
                 </div>
@@ -448,6 +445,9 @@
     
     [Parameter] public Guid Id { get; set; }
 
+    [SupplyParameterFromQuery(Name = "highlight")]
+    public string? HighlightTarget { get; set; }
+
     [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
 
     private Story? story;
@@ -505,9 +505,13 @@ private async Task RestoreVersion()
     private UpdateStoryRequest draft = new();
     private CreateAssignmentRequest newAssignment = new();
     private string reporterIdInput = "";
+    private bool canManageAssignment;
 
     protected override async Task OnInitializedAsync()
     {
+        var authUser = (await AuthState!).User;
+        canManageAssignment = authUser.IsInRole("AssignmentDesk") || authUser.IsInRole("Producer");
+
         story = await StoryService.GetStoryByIdAsync(Id);
         assignment = await AssignmentService.GetAssignmentForStoryAsync(Id);
         reporters = await AssignmentService.GetReportersAsync();
@@ -576,6 +580,8 @@ private void RefreshNextStatuses()
     // ----- Assignment -----
     private void StartEditAssign()
     {
+        if (!canManageAssignment) return;
+
         if (assignment is not null)
         {
             reporterIdInput = assignment.ReporterId.ToString();
@@ -604,6 +610,8 @@ private void RefreshNextStatuses()
 
     private async Task SaveAssignment()
     {
+        if (!canManageAssignment) return;
+
         if (!Guid.TryParse(reporterIdInput, out var reporterId))
         {
             reporterIdError = true;

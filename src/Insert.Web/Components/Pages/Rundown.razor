@@ -1,0 +1,417 @@
+@page "/rundown"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Insert.Application.Stories
+@using Insert.Domain.Entities
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize(Roles = "Producer")]
+@inject RundownService RundownService
+@inject NavigationManager Nav
+@inject RundownService RundownService
+
+<PageTitle>Rundown - INSERT NRCS</PageTitle>
+
+<div class="story-page rundown-page">
+    <div class="story-header">
+        <h1 class="story-title">Rundown</h1>
+    </div>
+
+    @if (errorMessage is not null)
+    {
+        <div class="rundown-error">@errorMessage</div>
+    }
+
+    @if (board is null && !showCreateForm)
+    {
+        <div class="card">
+            <p class="empty-text">Belum ada rundown.</p>
+            <button class="btn-primary" @onclick="() => showCreateForm = true">Create Rundown</button>
+        </div>
+    }
+    else if (showCreateForm)
+    {
+        <div class="card">
+            <h5 class="card-title">New Rundown</h5>
+            <EditForm Model="newRundown" OnValidSubmit="CreateRundown" FormName="new-rundown-form" class="form-stack">
+                <div class="field-group">
+                    <label>Title</label>
+                    <InputText class="field-input" @bind-Value="newRundown.Title" />
+                </div>
+                <div class="field-group">
+                    <label>Program</label>
+                    <InputText class="field-input" @bind-Value="newRundown.Program" />
+                </div>
+                <div class="field-group">
+                    <label>Air Date</label>
+                    <InputDate class="field-input" @bind-Value="newRundown.AirDate" />
+                </div>
+                <div class="field-group">
+                    <label>Start Time</label>
+                    <input class="field-input" type="time" value="@newRundown.StartTime.ToString(@"hh\:mm")"
+                           @onchange="OnStartTimeChanged" />
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Create</button>
+                    @if (board is not null)
+                    {
+                        <button type="button" class="btn-text" @onclick="() => showCreateForm = false">Cancel</button>
+                    }
+                </div>
+            </EditForm>
+        </div>
+    }
+    else if (board is not null)
+    {
+        <div class="card rundown-header-card">
+            <div class="rundown-header-fields">
+                <div>
+                    <div class="rundown-field-label">Title</div>
+                    <div class="rundown-field-value">@board.Rundown.Title</div>
+                </div>
+                <div>
+                    <div class="rundown-field-label">Program</div>
+                    <div class="rundown-field-value">@(board.Rundown.Program ?? "-")</div>
+                </div>
+                <div>
+                    <div class="rundown-field-label">Air Date</div>
+                    <div class="rundown-field-value">@board.Rundown.AirDate.ToString("dd/MM/yyyy")</div>
+                </div>
+                <div>
+                    <div class="rundown-field-label">Start Time</div>
+                    <div class="rundown-field-value">@FormatClock((int)board.Rundown.StartTime.TotalSeconds)</div>
+                </div>
+            </div>
+            <div class="rundown-stats">
+                <div class="rundown-stat">
+                    <div class="rundown-stat-num">@board.Items.Count(i => i.ItemType == RundownItemType.Story)</div>
+                    <div class="rundown-stat-label">Items</div>
+                </div>
+                <div class="rundown-stat">
+                    <div class="rundown-stat-num">@FormatDuration(board.TotalDurationSeconds)</div>
+                    <div class="rundown-stat-label">Total Duration</div>
+                </div>
+                <div class="rundown-stat">
+                    <div class="rundown-stat-num">@FormatClock(board.OnAirEndSeconds)</div>
+                    <div class="rundown-stat-label">On Air End</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rundown-popover-wrap">
+            <button class="btn-primary" @onclick="() => showAddSegment = !showAddSegment">Add Segment</button>
+            @if (showAddSegment)
+            {
+                <div class="rundown-add-segment-popover">
+                    <div class="field-group">
+                        <label>Type</label>
+                        <select class="field-input" @bind="newSegment.ItemType">
+                            <option value="@RundownItemType.Open">Open</option>
+                            <option value="@RundownItemType.Break">Break</option>
+                            <option value="@RundownItemType.Ads">Ads</option>
+                            <option value="@RundownItemType.Close">Close</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label>Label</label>
+                        <InputText class="field-input" @bind-Value="newSegment.Label" />
+                    </div>
+                    <div class="field-group">
+                        <label>Duration (mm:ss)</label>
+                        <input class="field-input" @bind="segmentDurationText" />
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn-primary" @onclick="AddSegment">Add</button>
+                        <button class="btn-text" @onclick="() => showAddSegment = false">Cancel</button>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="rundown-columns">
+            <div class="rundown-main-col">
+                <div class="rundown-table-header">
+                    <div></div>
+                    <div>Segment</div>
+                    <div>Start</div>
+                    <div>End</div>
+                    <div>Story</div>
+                    <div>Duration</div>
+                    <div>Status</div>
+                    <div></div>
+                </div>
+
+                <div class="card rundown-list-card">
+                    <div class="rundown-table-body">
+                        @foreach (var item in board.Items)
+                        {
+                            var itemId = item.Id;
+                            <div class="rundown-row @(item.StoryStatus == StoryStatus.Killed ? "rundown-row-killed" : "")"
+                                draggable="true"
+                                @ondragstart="() => OnDragStart(itemId)"
+                                @ondragover:preventDefault
+                                @ondrop="() => OnDrop(itemId)">
+                                <div class="rundown-drag-handle">
+                                    <iconify-icon icon="mdi:drag-vertical" width="18" height="18"></iconify-icon>
+                                </div>
+                                <div><span class="rundown-seg-badge @SegmentBadgeClass(item.ItemType)">@SegmentLabel(item)</span></div>
+                                <div class="rundown-time">@FormatClock(item.StartSeconds)</div>
+                                <div class="rundown-time">@FormatClock(item.EndSeconds)</div>
+                                <div>
+                                    @if (item.StoryId is Guid sid)
+                                    {
+                                        <div class="rundown-item-title rundown-item-title-link" draggable="false" @onclick="() => OpenStoryDetail(sid)">@item.Title</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="rundown-item-title">@item.Title</div>
+                                    }
+                                    @if (item.SubText is not null)
+                                    {
+                                        <div class="rundown-item-sub">@item.SubText</div>
+                                    }
+                                </div>
+                                <div>@FormatDuration(item.DurationSeconds)</div>
+                                <div>
+                                    @if (item.StoryStatus is not null)
+                                    {
+                                        <span class="chip @ChipClass(item.StoryStatus.Value)">@item.StoryStatus</span>
+                                    }
+                                </div>
+                                <div class="col-actions">
+                                    <button class="icon-btn" title="Remove from rundown" draggable="false" @onclick="() => RemoveItem(itemId)">
+                                        <iconify-icon icon="mdi:trash-can-outline" width="18" height="18"></iconify-icon>
+                                    </button>
+                                </div>
+                            </div>
+                            @if (item.StoryStatus == StoryStatus.Killed)
+                            {
+                                <div class="rundown-warning-row">
+                                    <iconify-icon icon="mdi:alert-outline" width="16" height="16"></iconify-icon>
+                                    This story was killed after being added to the rundown — remove it before air.
+                                </div>
+                            }
+                        }
+                        @if (!board.Items.Any())
+                        {
+                            <div class="empty-text rundown-empty-row">No items yet. Add an approved story from the panel on the right, or add a segment above.</div>
+                        }
+                    </div>
+                    @if (board.Items.Any())
+                    {
+                    <div class="rundown-total-row">
+                        <div></div>
+                        <div class="rundown-total-label" style="grid-column: 2 / 6;">Total Rundown Duration</div>
+                        <div class="rundown-total-value">@FormatDuration(board.TotalDurationSeconds)</div>
+                    </div>
+                    }
+                </div>
+            </div>
+
+            <div class="rundown-side-col">
+                <h5 class="rundown-side-title">Approved Stories <span class="rundown-picker-count">(@board.AvailableApprovedStories.Count available)</span></h5>
+                <div class="card rundown-picker-card">
+                    @if (!board.AvailableApprovedStories.Any())
+                    {
+                        <p class="empty-text">No approved stories available to add.</p>
+                    }
+                    else
+                    {
+                        @foreach (var story in board.AvailableApprovedStories)
+                        {
+                            var storyId = story.StoryId;
+                            <div class="rundown-picker-item">
+                                <div>
+                                    <div class="rundown-item-title rundown-item-title-link" @onclick="() => OpenStoryDetail(storyId)">@story.Title</div>
+                                    <div class="rundown-item-sub">
+                                        @(story.ReporterName is not null ? $"Reporter: {story.ReporterName}" : "")
+                                        @(story.Category is not null ? $" · Category: {story.Category}" : "")
+                                        · @FormatDuration(story.DurationSeconds)
+                                    </div>
+                                </div>
+                                <button class="btn-outline" @onclick="() => AddStory(storyId)">+ Add</button>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private RundownBoard? board;
+    private bool showCreateForm = false;
+    private bool showAddSegment = false;
+    private string? errorMessage;
+    private Guid? draggedId;
+
+    private CreateRundownRequest newRundown = new();
+    private AddSegmentRequest newSegment = new() { ItemType = RundownItemType.Open, Label = "Opening", DurationSeconds = 30 };
+    private string segmentDurationText = "00:30";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBoardAsync();
+        if (board is null) showCreateForm = true;
+    }
+
+    private async Task LoadBoardAsync()
+    {
+        board = await RundownService.GetBoardAsync(null);
+    }
+
+    private async Task CreateRundown()
+    {
+        errorMessage = null;
+        try
+        {
+            var userId = await GetCurrentUserIdAsync() ?? throw new InvalidOperationException("Not signed in.");
+            await RundownService.CreateRundownAsync(newRundown, userId);
+            showCreateForm = false;
+            newRundown = new();
+            await LoadBoardAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private void OnStartTimeChanged(ChangeEventArgs e)
+    {
+        if (TimeSpan.TryParse(e.Value?.ToString(), out var ts))
+            newRundown.StartTime = ts;
+    }
+
+    private async Task AddStory(Guid storyId)
+    {
+        errorMessage = null;
+        if (board is null) return;
+        try
+        {
+            var userId = await GetCurrentUserIdAsync() ?? throw new InvalidOperationException("Not signed in.");
+            await RundownService.AddStoryAsync(board.Rundown.Id, storyId, userId);
+            await LoadBoardAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task AddSegment()
+    {
+        errorMessage = null;
+        if (board is null) return;
+        try
+        {
+            var (mm, ss) = ParseMmSs(segmentDurationText);
+            newSegment.DurationSeconds = mm * 60 + ss;
+            var userId = await GetCurrentUserIdAsync() ?? throw new InvalidOperationException("Not signed in.");
+            await RundownService.AddSegmentAsync(board.Rundown.Id, newSegment, userId);
+            showAddSegment = false;
+            newSegment = new() { ItemType = RundownItemType.Open, Label = "Opening", DurationSeconds = 30 };
+            segmentDurationText = "00:30";
+            await LoadBoardAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task RemoveItem(Guid itemId)
+    {
+        errorMessage = null;
+        if (board is null) return;
+        try
+        {
+            var userId = await GetCurrentUserIdAsync() ?? throw new InvalidOperationException("Not signed in.");
+            await RundownService.RemoveItemAsync(board.Rundown.Id, itemId, userId);
+            await LoadBoardAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private void OnDragStart(Guid id) => draggedId = id;
+    private void OpenStoryDetail(Guid storyId) => Nav.NavigateTo($"/stories/{storyId}");
+
+    private async Task OnDrop(Guid targetId)
+    {
+        if (draggedId is null || draggedId == targetId || board is null) return;
+
+        var ids = board.Items.Select(i => i.Id).ToList();
+        var fromIndex = ids.IndexOf(draggedId.Value);
+        var toIndex = ids.IndexOf(targetId);
+        if (fromIndex < 0 || toIndex < 0) return;
+
+        ids.RemoveAt(fromIndex);
+        ids.Insert(toIndex, draggedId.Value);
+
+        await RundownService.ReorderAsync(board.Rundown.Id, ids);
+        draggedId = null;
+        await LoadBoardAsync();
+    }
+
+    private static (int mm, int ss) ParseMmSs(string text)
+    {
+        var parts = (text ?? "").Split(':');
+        var mm = parts.Length > 0 && int.TryParse(parts[0], out var m) ? m : 0;
+        var ss = parts.Length > 1 && int.TryParse(parts[1], out var s) ? s : 0;
+        return (mm, ss);
+    }
+
+    private static string FormatDuration(int totalSeconds)
+    {
+        var span = TimeSpan.FromSeconds(Math.Max(0, totalSeconds));
+        return $"{(int)span.TotalMinutes:00}:{span.Seconds:00}";
+    }
+
+    private static string FormatClock(int totalSeconds)
+    {
+        var normalized = ((totalSeconds % 86400) + 86400) % 86400;
+        var span = TimeSpan.FromSeconds(normalized);
+        return span.ToString(@"hh\:mm\:ss");
+    }
+
+    private static string SegmentLabel(RundownItemView item) => item.ItemType switch
+    {
+        RundownItemType.Open => "OPEN",
+        RundownItemType.Break => "BREAK",
+        RundownItemType.Ads => "ADS",
+        RundownItemType.Close => "CLOSE",
+        _ => "STORY"
+    };
+
+    private static string SegmentBadgeClass(RundownItemType type) => type switch
+    {
+        RundownItemType.Open => "seg-open",
+        RundownItemType.Break => "seg-break",
+        RundownItemType.Ads => "seg-ads",
+        RundownItemType.Close => "seg-close",
+        _ => "seg-story"
+    };
+
+    private static string ChipClass(StoryStatus status) => status switch
+    {
+        StoryStatus.Draft => "chip-draft",
+        StoryStatus.InReview => "chip-review",
+        StoryStatus.Approved => "chip-approved",
+        StoryStatus.Published => "chip-published",
+        StoryStatus.Killed => "chip-killed",
+        _ => "chip-assigned"
+    };
+
+    private async Task<Guid?> GetCurrentUserIdAsync()
+    {
+        var user = (await AuthState!).User;
+        var idClaim = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.TryParse(idClaim, out var userId) ? userId : null;
+    }
+}

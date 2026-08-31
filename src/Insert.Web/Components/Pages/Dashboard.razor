@@ -1,0 +1,64 @@
+@page "/dashboard"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Insert.Application.Stories
+@attribute [Authorize]
+@inject IUserLookupService UserLookup
+
+<PageTitle>Dashboard - INSERT NRCS</PageTitle>
+
+<div class="story-page">
+    <div class="story-header">
+        <h1 class="story-title">Dashboard</h1>
+    </div>
+
+    <div class="card">
+        <h5 class="card-title">Welcome@(displayName is not null ? $", {displayName}" : "")</h5>
+        <p class="empty-text">@(roles.Any() ? string.Join(", ", roles) : "No role assigned")</p>
+    </div>
+
+    <div class="card">
+        <h5 class="card-title">Quick Links</h5>
+        <div class="dashboard-links">
+            @foreach (var link in VisibleLinks)
+            {
+                <a class="btn-outline" href="@link.Href">@link.Label</a>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private string? displayName;
+    private List<string> roles = new();
+    private List<LinkItem> VisibleLinks = new();
+
+    private static readonly List<LinkItem> AllLinks = new()
+    {
+        new("Stories", "/stories", new[] { "Reporter", "Producer", "AssignmentDesk" }),
+        new("Assignments", "/assignments", new[] { "Reporter", "Producer", "AssignmentDesk" }),
+        new("Rundown", "/rundown", new[] { "Producer" }),
+        new("Ingest", "/ingest", new[] { "Reporter", "IngestOperator", "AssignmentDesk" }),
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await AuthState!).User;
+        roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
+
+        VisibleLinks = AllLinks.Where(l => l.Roles.Any(user.IsInRole)).ToList();
+
+        var idClaim = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (Guid.TryParse(idClaim, out var userId))
+        {
+            var summaries = await UserLookup.GetUsersByIdsAsync(new[] { userId });
+            displayName = summaries.FirstOrDefault()?.Name;
+        }
+    }
+
+    private record LinkItem(string Label, string Href, string[] Roles);
+}

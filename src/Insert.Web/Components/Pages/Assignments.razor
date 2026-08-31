@@ -30,13 +30,14 @@
     }
     else
     {
-        <table class="stories-table">
+        <table class="stories-table assignments-table">
             <thead>
                 <tr>
                     <th>Story</th>
-                    <th>Status</th>
+                    <th>Priority</th>
                     <th>Location</th>
                     <th>Deadline</th>
+                    <th>Status</th>
                 </tr>
             </thead>
             <tbody>
@@ -45,9 +46,15 @@
                     var storyId = a.StoryId;
                     <tr @onclick="() => OpenStory(storyId)">
                         <td>@GetStoryTitle(a.StoryId)</td>
-                        <td><span class="chip @ChipClass(a.Status)">@a.Status</span></td>
+                        <td>
+                            @if (storiesById.TryGetValue(a.StoryId, out var story))
+                            {
+                                <span class="chip @PriorityClass(story.Priority)">@story.Priority</span>
+                            }
+                        </td>
                         <td>@(a.Location ?? "-")</td>
                         <td>@(a.Deadline?.ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
+                        <td><span class="chip @ChipClass(a.Status)">@a.Status</span></td>
                     </tr>
                 }
             </tbody>
@@ -60,7 +67,7 @@
     private Task<AuthenticationState>? AuthState { get; set; }
 
     private List<Assignment>? assignments;
-    private Dictionary<Guid, string> storyTitles = new();
+    private Dictionary<Guid, Story> storiesById = new();
     private bool isDesk;
 
     protected override async Task OnInitializedAsync()
@@ -69,7 +76,7 @@
         isDesk = user.IsInRole("AssignmentDesk") || user.IsInRole("Producer");
 
         var stories = await StoryService.GetAllStoriesAsync();
-        storyTitles = stories.ToDictionary(s => s.Id, s => s.Title);
+        storiesById = stories.ToDictionary(s => s.Id, s => s);
 
         if (isDesk)
         {
@@ -85,9 +92,9 @@
     }
 
     private string GetStoryTitle(Guid storyId) =>
-        storyTitles.TryGetValue(storyId, out var title) ? title : "(unknown story)";
+        storiesById.TryGetValue(storyId, out var story) ? story.Title : "(unknown story)";
 
-    private void OpenStory(Guid storyId) => Nav.NavigateTo($"/stories/{storyId}");
+    private void OpenStory(Guid storyId) => Nav.NavigateTo($"/stories/{storyId}?highlight=assignment#assignment-card");
 
     private string ChipClass(AssignmentStatus status) => status switch
     {
@@ -96,5 +103,13 @@
         AssignmentStatus.Declined => "chip-assignment-declined",
         AssignmentStatus.Cancelled => "chip-assignment-cancelled",
         _ => "chip-assignment-pending"
+    };
+
+    private string PriorityClass(StoryPriority priority) => priority switch
+    {
+        StoryPriority.Breaking => "chip-breaking",
+        StoryPriority.Urgent => "chip-urgent",
+        StoryPriority.High => "chip-high",
+        _ => "chip-normal"
     };
 }

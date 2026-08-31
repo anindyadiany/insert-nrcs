@@ -228,6 +228,66 @@ namespace Insert.Infrastructure.Migrations
                     b.ToTable("MediaAssets");
                 });
 
+            modelBuilder.Entity("Insert.Domain.Entities.Rundown", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("AirDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Program")
+                        .HasColumnType("longtext");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("time(6)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Rundowns");
+                });
+
+            modelBuilder.Entity("Insert.Domain.Entities.RundownItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ItemType")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid>("RundownId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int?>("SegmentDurationSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SegmentLabel")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("StoryId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RundownItems");
+                });
+
             modelBuilder.Entity("Insert.Domain.Entities.Script", b =>
                 {
                     b.Property<Guid>("Id")

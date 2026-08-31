@@ -110,6 +110,8 @@
 }
 .assignment-row:hover[b-pdjymeabel] { border-color: #0090D4; }
 
+.assignment-row.is-clickable[b-pdjymeabel] { cursor: pointer; }
+
 .assignment-info[b-pdjymeabel] { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .assignment-name[b-pdjymeabel] { font-size: 14px; color: #28282B; }
 .assignment-meta[b-pdjymeabel] {
@@ -515,3 +517,13 @@
     line-height: 1.5;
     color: #5A3D0F;
 }
+.assignment-flash[b-pdjymeabel] {
+    animation: assignment-highlight-b-pdjymeabel 1.8s ease;
+}
+
+@keyframes assignment-highlight-b-pdjymeabel {
+    0%   { box-shadow: 0 0 0 3px rgba(0, 84, 158, .35); background-color: #EAF3FC; }
+    100% { box-shadow: 0 0 0 0 rgba(0, 84, 158, 0); background-color: transparent; }
+}
+
+.assignment-row.is-clickable[b-pdjymeabel] { cursor: pointer; }

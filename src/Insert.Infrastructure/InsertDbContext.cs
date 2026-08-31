@@ -22,6 +22,9 @@ public class InsertDbContext : IdentityDbContext<ApplicationUser, ApplicationRol
     public DbSet<StoryMedia> StoryMedias => Set<StoryMedia>();
 
     public DbSet<Approval> Approvals => Set<Approval>();
+
+    public DbSet<Rundown> Rundowns => Set<Rundown>();
+    public DbSet<RundownItem> RundownItems => Set<RundownItem>();
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -44,5 +47,6 @@ public class InsertDbContext : IdentityDbContext<ApplicationUser, ApplicationRol
         builder.Entity<MediaAsset>().Property(m => m.RetentionStatus).HasConversion<string>();
 
         builder.Entity<Approval>().Property(a => a.Decision).HasConversion<string>();
+        builder.Entity<RundownItem>().Property(i => i.ItemType).HasConversion<string>();
     }
 }

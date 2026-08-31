@@ -9,4 +9,5 @@ public class UserSummary
 public interface IUserLookupService
 {
     Task<List<UserSummary>> GetUsersInRoleAsync(string role);
+    Task<List<UserSummary>> GetUsersByIdsAsync(IEnumerable<Guid> ids);
 }
