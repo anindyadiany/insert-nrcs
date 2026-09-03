@@ -144,6 +144,7 @@
     private string ChipClass(StoryStatus status) => status switch
     {
         StoryStatus.Draft => "chip-draft",
+        StoryStatus.InProgress => "chip-inprogress",
         StoryStatus.InReview => "chip-review",
         StoryStatus.Approved => "chip-approved",
         StoryStatus.Published => "chip-published",

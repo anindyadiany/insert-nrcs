@@ -160,23 +160,96 @@
 
 <!-- ===== Assignments ===== -->
 <div class="card @(HighlightTarget == "assignment" ? "assignment-flash" : "")" id="assignment-card">
-    <div class="card-head">
-        <h5 class="card-title">Assignments</h5>
-    </div>
+                <div class="card-head">
+                    <h5 class="card-title">Assignment</h5>
 
-    <div class="card-scroll">
-        @if (assignment is not null)
-        {
-            <ul class="assignment-list">
-                <li class="assignment-row @(canManageAssignment ? "is-clickable" : "")"
-                    @onclick="StartEditAssign">
-                                <div class="assignment-info">
-                                    <span class="assignment-name">@Show(assignment.Location, "Assignment")</span>
-                                    <span class="assignment-meta">@Show(assignment.Brief, "Tidak ada brief")</span>
-                                    <span class="assignment-meta">Deadline: @(assignment.Deadline?.ToString("dd/MM/yyyy HH:mm") ?? "-")</span>
+                    @if (editAssign)
+                    {
+                        <div class="head-actions">
+                            <button class="btn-text" @onclick="CancelAssign">Cancel</button>
+                            <button class="btn-save" @onclick="SaveAssignment">Save</button>
+                        </div>
+                    }
+                    else if (assignment is not null && canManageAssignment)
+                    {
+                        <button class="icon-btn" title="Edit assignment" @onclick="StartEditAssign">
+                            <iconify-icon icon="mdi:pencil-outline" width="18" height="18"></iconify-icon>
+                        </button>
+                    }
+                </div>
+
+                <div class="card-scroll">
+                    @if (editAssign)
+                    {
+                        <div class="form-stack">
+                            <div class="field-group">
+                                <label>Reporter</label>
+                                <select class="field-input" @bind="reporterIdInput">
+                                    <option value="">-- pilih reporter --</option>
+                                    @foreach (var r in reporters)
+                                    {
+                                        <option value="@r.Id">@r.Name</option>
+                                    }
+                                </select>
+                                @if (reporterIdError)
+                                {
+                                    <span class="field-error">Pilih salah satu reporter.</span>
+                                }
+                            </div>
+                            <div class="field-row">
+                                <div class="field-group">
+                                    <label>Location</label>
+                                    <input class="field-input" @bind="newAssignment.Location" />
                                 </div>
-                            </li>
-                        </ul>
+                                <div class="field-group">
+                                    <label>Event</label>
+                                    <input class="field-input" @bind="newAssignment.Event" />
+                                </div>
+                            </div>
+                            <div class="field-group">
+                                <label>Deadline</label>
+                                <input type="datetime-local" class="field-input"
+                                       value="@ToInputValue(newAssignment.Deadline)"
+                                       @onchange="OnDeadlineChanged" />
+                            </div>
+                            <div class="field-group">
+                                <label>Brief</label>
+                                <textarea class="field-input" rows="3" @bind="newAssignment.Brief"></textarea>
+                            </div>
+                            <div class="field-group">
+                                <label>Notes</label>
+                                <textarea class="field-input" rows="2" @bind="newAssignment.Notes"></textarea>
+                            </div>
+                        </div>
+                    }
+                    else if (assignment is not null)
+                    {
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Reporter</span>
+                                <span class="info-value">@ReporterName(assignment.ReporterId)</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Location</span>
+                                <span class="info-value">@Show(assignment.Location)</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Event</span>
+                                <span class="info-value">@Show(assignment.Event)</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Deadline</span>
+                                <span class="info-value">@(assignment.Deadline?.ToString("dd/MM/yyyy HH:mm") ?? "-")</span>
+                            </div>
+                            <div class="info-item info-item-full">
+                                <span class="info-label">Brief</span>
+                                <span class="info-value">@Show(assignment.Brief)</span>
+                            </div>
+                            <div class="info-item info-item-full">
+                                <span class="info-label">Notes</span>
+                                <span class="info-value">@Show(assignment.Notes)</span>
+                            </div>
+                        </div>
                     }
                     else
                     {
@@ -305,63 +378,6 @@
     </div>
 }
 
-        @if (editAssign)
-        {
-            <div class="modal-overlay" @onclick="CancelAssign">
-                <div class="modal-box" @onclick:stopPropagation="true">
-                    <div class="modal-head">
-                        <h5 class="card-title">@(assignment is null ? "New Assignment" : "Edit Assignment")</h5>
-                        <button class="icon-btn" @onclick="CancelAssign">
-                            <iconify-icon icon="mdi:close" width="20" height="20"></iconify-icon>
-                        </button>
-                    </div>
-
-                    <div class="form-stack">
-                        <div class="field-group">
-                            <label>Reporter</label>
-                            <select class="field-input" @bind="reporterIdInput">
-                                <option value="">-- pilih reporter --</option>
-                                @foreach (var r in reporters)
-                                {
-                                    <option value="@r.Id">@r.Name</option>
-                                }
-                            </select>
-                            @if (reporterIdError)
-                            {
-                                <span class="field-error">Pilih salah satu reporter.</span>
-                            }
-                        </div>
-                        <div class="field-group">
-                            <label>Location</label>
-                            <input class="field-input" @bind="newAssignment.Location" />
-                        </div>
-                        <div class="field-group">
-                            <label>Event</label>
-                            <input class="field-input" @bind="newAssignment.Event" />
-                        </div>
-                        <div class="field-group">
-                            <label>Deadline</label>
-                            <input type="datetime-local" class="field-input"
-                                   value="@ToInputValue(newAssignment.Deadline)"
-                                   @onchange="OnDeadlineChanged" />
-                        </div>
-                        <div class="field-group">
-                            <label>Brief</label>
-                            <textarea class="field-input" rows="4" @bind="newAssignment.Brief"></textarea>
-                        </div>
-                        <div class="field-group">
-                            <label>Notes</label>
-                            <textarea class="field-input" rows="2" @bind="newAssignment.Notes"></textarea>
-                        </div>
-
-                        <div class="form-actions">
-                            <button class="btn-primary" @onclick="SaveAssignment">Save</button>
-                            <button class="btn-text" @onclick="CancelAssign">Cancel</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
 
         <!-- ===== Script ===== -->
         <div class="card script-card">
@@ -729,6 +745,9 @@ private void RefreshNextStatuses()
         return Guid.TryParse(idClaim, out var userId) ? userId : null;
     }
 
+    private string ReporterName(Guid reporterId) =>
+        reporters.FirstOrDefault(r => r.Id == reporterId)?.Name ?? "-";
+
     private static string Show(string? value, string fallback = "-") =>
         string.IsNullOrWhiteSpace(value) ? fallback : value;
 
@@ -757,6 +776,7 @@ private void RefreshNextStatuses()
     private string ChipClass(StoryStatus status) => status switch
     {
         StoryStatus.Draft => "chip-draft",
+        StoryStatus.InProgress => "chip-inprogress",
         StoryStatus.InReview => "chip-review",
         StoryStatus.Approved => "chip-approved",
         StoryStatus.Published => "chip-published",
@@ -766,10 +786,10 @@ private void RefreshNextStatuses()
 
     private string PriorityClass(StoryPriority priority) => priority switch
     {
-        StoryPriority.Breaking => "chip-breaking",
-        StoryPriority.Urgent => "chip-urgent",
-        StoryPriority.High => "chip-high",
-        _ => "chip-normal"
+        StoryPriority.Breaking => "chip-priority-breaking",
+        StoryPriority.Urgent => "chip-priority-urgent",
+        StoryPriority.High => "chip-priority-high",
+        _ => "chip-priority-normal"
     };
 
     public void Dispose() => autosaveCts?.Cancel();

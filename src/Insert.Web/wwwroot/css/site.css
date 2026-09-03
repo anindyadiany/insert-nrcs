@@ -15,6 +15,7 @@
   --bs-body-color: #1A1D21;
   --bs-secondary-color: #5A6169;
 
+  /* Your own tokens — for custom CSS you write yourself, outside Bootstrap's classes */
   --color-primary: #00549E;
   --color-info: #0090D4;
   --color-success: #1C8A42;
@@ -30,9 +31,11 @@
   --color-text-secondary: #5A6169;
   --color-text-muted: #9BA1A8;
 }
+
+/* ===== Layout halaman story ===== */
 .story-page {
     padding: 32px 40px;
-    background-color: #FFFFFF;
+    background-color: #F5F7FA;
     min-height: 100vh;
     font-family: 'Helvetica Neue', Arial, sans-serif;
     color: #000;
@@ -137,27 +140,32 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    height: 35px;
     border-radius: 20px;
-    padding: 8px 20px;
+    padding: 12px 16px;
+    box-sizing: border-box;
+    box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.25);
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     color: #fff;
     white-space: nowrap;
 }
 
 
-.chip-priority-normal   { background-color: var(--color-text-muted); }
-.chip-priority-high     { background-color: var(--color-info); }
-.chip-priority-urgent   { background-color: var(--color-warning); }
-.chip-priority-breaking { background-color: var(--color-danger); }
+/* Priority chips */
+.chip-priority-normal   { background-color: #3D8B45; }
+.chip-priority-breaking { background-color: #C0392B; }
+.chip-priority-high     { background-color: #3E90D4; }
+.chip-priority-urgent   { background-color: #E39336; }
 
-
-.chip-draft    { background-color: var(--color-text-muted); }
-.chip-assigned { background-color: var(--color-info); }
-.chip-review   { background-color: var(--color-yellow); }
-.chip-approved { background-color: var(--color-lime); }
-.chip-published { background-color: var(--color-success); }
-.chip-killed   { background-color: var(--color-purple); }
+/* Status chips */
+.chip-draft     { background-color: #9BA1A8; }
+.chip-assigned  { background-color: #1F4E9C; }
+.chip-inprogress{ background-color: #3E90D4; }
+.chip-review    { background-color: #F5D34B; }
+.chip-approved  { background-color: #A9CE5B; }
+.chip-published { background-color: #3D8B45; }
+.chip-killed    { background-color: #C0392B; }
 
 .chip-assignment-pending   { background-color: var(--color-text-muted); }
 .chip-assignment-accepted  { background-color: var(--color-success); }
@@ -173,10 +181,10 @@
 
 .stories-table th {
     font-family: 'Helvetica Neue', Arial, sans-serif;
-    font-size: 16px;
-    font-weight: 500;
-    color: #6C6C6C;
-    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    text-align: left;
     padding: 0 24px 8px;
 }
 
@@ -523,26 +531,37 @@
     color: #9BA1A8;
     margin: 0;
 }
-.dashboard-links { display: flex; gap: 12px; flex-wrap: wrap; }
-
-.chip-breaking { background-color: #C0392B; }
-.chip-urgent   { background-color: #E8A33D; }
-.chip-high     { background-color: #3498DB; }
-.chip-normal   { background-color: #9E9E9E; }
-.assignment-empty-link {
-    color: var(--color-primary);
-    font-size: 12.5px;
-    font-weight: 600;
-    cursor: pointer;
+/* ===== Page background ===== */
+body {
+    background-color: #F5F7FA;
 }
-.assignment-empty-link:hover { text-decoration: underline; }
 
+.page,
+.content {
+    background-color: #F5F7FA;
+}
+
+/* .story-page already fills the content area; kill Bootstrap's px-4 inset */
+.content.px-4 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* Stories page: center Status, Priority, Deadline (cols 2-4) */
+.story-list-table th:nth-child(2),
+.story-list-table th:nth-child(3),
+.story-list-table th:nth-child(4),
 .story-list-table td:nth-child(2),
 .story-list-table td:nth-child(3),
 .story-list-table td:nth-child(4) {
     text-align: center;
 }
 
+/* Assignments page: center Priority, Location, Deadline, Status (cols 2-5) */
+.assignments-table th:nth-child(2),
+.assignments-table th:nth-child(3),
+.assignments-table th:nth-child(4),
+.assignments-table th:nth-child(5),
 .assignments-table td:nth-child(2),
 .assignments-table td:nth-child(3),
 .assignments-table td:nth-child(4),

@@ -8,7 +8,6 @@
 @attribute [Authorize(Roles = "Producer")]
 @inject RundownService RundownService
 @inject NavigationManager Nav
-@inject RundownService RundownService
 
 <PageTitle>Rundown - INSERT NRCS</PageTitle>
 
@@ -199,11 +198,11 @@
                     </div>
                     @if (board.Items.Any())
                     {
-                    <div class="rundown-total-row">
-                        <div></div>
-                        <div class="rundown-total-label" style="grid-column: 2 / 6;">Total Rundown Duration</div>
-                        <div class="rundown-total-value">@FormatDuration(board.TotalDurationSeconds)</div>
-                    </div>
+                <div class="rundown-total-row">
+                    <div></div>
+                    <div class="rundown-total-label" style="grid-column: 2 / 6;">Total Rundown Duration</div>
+                    <div class="rundown-total-value">@FormatDuration(board.TotalDurationSeconds)</div>
+                </div>
                     }
                 </div>
             </div>

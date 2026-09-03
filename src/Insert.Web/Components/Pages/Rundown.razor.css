@@ -102,8 +102,8 @@
     padding: 14px 16px;
     border-top: 1px solid var(--color-border);
 }
-.rundown-total-label { font-weight: 700; color: var(--color-primary); font-size: 15px; }
-.rundown-total-value { font-weight: 700; color: var(--color-primary); font-size: 15px; }
+.rundown-total-label { font-weight: 700; color: var(--color-primary); font-size: 15px; text-align: left; }
+.rundown-total-value { font-weight: 700; color: var(--color-primary); font-size: 15px; text-align: center; }
 
 .rundown-drag-handle { color: var(--color-text-muted); width: 24px; }
 .rundown-time { font-variant-numeric: tabular-nums; }
@@ -154,4 +154,21 @@
 @keyframes assignment-highlight {
     0%   { box-shadow: 0 0 0 3px rgba(0, 84, 158, .35); background-color: #EAF3FC; }
     100% { box-shadow: 0 0 0 0 rgba(0, 84, 158, 0); background-color: transparent; }
+}
+/* ===== Center all columns except Story (col 5) ===== */
+.rundown-table-header > div,
+.rundown-row > div {
+    text-align: center;
+}
+
+.rundown-table-header > div:nth-child(5),
+.rundown-row > div:nth-child(5) {
+    text-align: left;
+}
+
+/* Chips and badges are inline-flex, so center them within their grid cell */
+.rundown-row > div:nth-child(2),
+.rundown-row > div:nth-child(7) {
+    display: flex;
+    justify-content: center;
 }

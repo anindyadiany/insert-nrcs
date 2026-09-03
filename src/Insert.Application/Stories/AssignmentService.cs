@@ -89,9 +89,15 @@ public class AssignmentService
         assignment.Brief = request.Brief;
         assignment.Notes = request.Notes;
 
+        // keep Story.ReporterId in sync — it is duplicated on Story for querying
+        var story = await _storyRepository.GetByIdAsync(assignment.StoryId);
+        if (story is not null)
+        {
+            story.ReporterId = request.ReporterId;
+        }
+
         await _assignmentRepository.SaveChangesAsync();
     }
-
     public Task<List<Assignment>> GetAllAssignmentsAsync() => _assignmentRepository.GetAllAsync();
     public Task<List<Assignment>> GetAssignmentsForReporterAsync(Guid reporterId) => _assignmentRepository.GetByReporterIdAsync(reporterId);
 }

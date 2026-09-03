@@ -107,9 +107,9 @@
 
     private string PriorityClass(StoryPriority priority) => priority switch
     {
-        StoryPriority.Breaking => "chip-breaking",
-        StoryPriority.Urgent => "chip-urgent",
-        StoryPriority.High => "chip-high",
-        _ => "chip-normal"
+        StoryPriority.Breaking => "chip-priority-breaking",
+        StoryPriority.Urgent => "chip-priority-urgent",
+        StoryPriority.High => "chip-priority-high",
+        _ => "chip-priority-normal"
     };
 }

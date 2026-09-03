@@ -1,64 +1,701 @@
 @page "/dashboard"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
-@using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using System.Globalization
 @using Insert.Application.Stories
+@using Insert.Domain.Entities
 @attribute [Authorize]
+@inject StoryService StoryService
+@inject AssignmentService AssignmentService
+@inject ScriptService ScriptService
+@inject IngestService IngestService
+@inject RundownService RundownService
 @inject IUserLookupService UserLookup
+@inject NavigationManager Nav
 
 <PageTitle>Dashboard - INSERT NRCS</PageTitle>
 
 <div class="story-page">
-    <div class="story-header">
-        <h1 class="story-title">Dashboard</h1>
-    </div>
-
-    <div class="card">
-        <h5 class="card-title">Welcome@(displayName is not null ? $", {displayName}" : "")</h5>
-        <p class="empty-text">@(roles.Any() ? string.Join(", ", roles) : "No role assigned")</p>
-    </div>
-
-    <div class="card">
-        <h5 class="card-title">Quick Links</h5>
-        <div class="dashboard-links">
-            @foreach (var link in VisibleLinks)
-            {
-                <a class="btn-outline" href="@link.Href">@link.Label</a>
-            }
+    @if (loading)
+    {
+        <p class="loading">Loading...</p>
+    }
+    else if (!isReporter && !isProducer && !isDesk)
+    {
+        <div class="story-header">
+            <h1 class="story-title">Dashboard</h1>
         </div>
-    </div>
+        <div class="card">
+            <h5 class="card-title">Welcome@(displayName is not null ? $", {displayName}" : "")</h5>
+            <p class="empty-text">Dashboard untuk role ini belum tersedia.</p>
+        </div>
+    }
+    else if (isReporter && !isProducer && !isDesk)
+    {
+        <div class="greeting">
+            <h2>@Greeting@(displayName is not null ? $", {displayName}" : "")</h2>
+            <p>@SummaryLine</p>
+        </div>
+
+        <div class="dash-stats">
+            <div class="stat-icon-card" @onclick='() => Nav.NavigateTo("/assignments")'>
+                <div class="stat-ico ico-blue"><iconify-icon icon="mdi:clipboard-text-outline" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@myAssignments.Count</div>
+                    <div class="dash-stat-label">My Assignments</div>
+                </div>
+            </div>
+            <div class="stat-icon-card" @onclick='() => Nav.NavigateTo("/stories")'>
+                <div class="stat-ico ico-info"><iconify-icon icon="mdi:file-document-multiple-outline" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@myStories.Count</div>
+                    <div class="dash-stat-label">My Stories</div>
+                </div>
+            </div>
+            <div class="stat-icon-card" @onclick='() => Nav.NavigateTo("/ingest")'>
+                <div class="stat-ico ico-green"><iconify-icon icon="mdi:tray-arrow-down" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@ingestProcessing</div>
+                    <div class="dash-stat-label">Ingest Processing</div>
+                </div>
+            </div>
+            <div class="stat-icon-card" @onclick='() => Nav.NavigateTo("/stories")'>
+                <div class="stat-ico ico-red"><iconify-icon icon="mdi:alert-circle-outline" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@deadlineToday</div>
+                    <div class="dash-stat-label">Deadline Today</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="reporter-grid">
+            <div>
+                <div class="card">
+                    <div class="card-head">
+                        <h5 class="card-title">My Assignments</h5>
+                        <a class="head-link" href="/assignments">All assignments</a>
+                    </div>
+
+                    @if (!myAssignments.Any())
+                    {
+                        <p class="empty-text">Belum ada assignment untuk kamu.</p>
+                    }
+                    else
+                    {
+                        <ul class="dash-list">
+                            @foreach (var a in myAssignments)
+                            {
+                                var sid = a.StoryId;
+                                <li class="dash-item" @onclick="() => OpenStory(sid)">
+                                    <div class="dash-item-body">
+                                        <span class="dash-item-title">@StoryTitle(a.StoryId)</span>
+                                        <span class="dash-item-meta">
+                                            Deadline: @FormatDeadline(a.Deadline)@(string.IsNullOrWhiteSpace(a.Location) ? "" : $" · {a.Location}")
+                                        </span>
+                                    </div>
+                                    @if (storiesById.TryGetValue(a.StoryId, out var st))
+                                    {
+                                        <span class="chip chip-sm @PriorityChipClass(st.Priority)">@st.Priority</span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+
+                <div class="card">
+                    <div class="card-head">
+                        <h5 class="card-title">My Stories</h5>
+                        <a class="head-link" href="/stories">All stories</a>
+                    </div>
+
+                    @if (!myStories.Any())
+                    {
+                        <p class="empty-text">Belum ada story untuk kamu.</p>
+                    }
+                    else
+                    {
+                        <div class="story-cards">
+                            @foreach (var s in myStories)
+                            {
+                                var sid = s.Id;
+                                var info = storyInfo[s.Id];
+                                <div class="story-card @StoryCardClass(s.Status)" @onclick="() => OpenStory(sid)">
+                                    <div class="sc-top">
+                                        <div class="sc-ico">
+                                            <iconify-icon icon="@StoryCardIcon(s.Status)" width="22" height="22"></iconify-icon>
+                                        </div>
+                                        <div>
+                                            <div class="sc-title">@s.Title</div>
+                                            <div class="sc-sub">Deadline @FormatDeadline(s.Deadline)</div>
+                                        </div>
+                                    </div>
+                                    <div class="sc-meta">
+                                        @(info.VersionCount > 0 ? $"Script v{info.VersionCount}" : "Belum ada script") · @info.MediaCount media
+                                    </div>
+                                    <div class="sc-track">
+                                        <div class="sc-fill" style="width:@(ProgressPercent(s.Status))%"></div>
+                                    </div>
+                                    <div class="sc-pct">@s.Status · @(ProgressPercent(s.Status))%</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <div class="card-head">
+                        <h5 class="card-title">Deadlines</h5>
+                    </div>
+                    <div class="cal-head">
+                        <b>@calendarMonth.ToString("MMMM yyyy", CultureInfo.InvariantCulture)</b>
+                        <span class="cal-nav">
+                            <button @onclick="PrevMonth">&lsaquo;</button>
+                            <button @onclick="NextMonth">&rsaquo;</button>
+                        </span>
+                    </div>
+                    <div class="cal-grid">
+                        <div class="dow">SUN</div><div class="dow">MON</div><div class="dow">TUE</div>
+                        <div class="dow">WED</div><div class="dow">THU</div><div class="dow">FRI</div><div class="dow">SAT</div>
+
+                        @foreach (var i in Enumerable.Range(0, LeadingBlanks))
+                        {
+                            <div class="day faint"></div>
+                        }
+                        @foreach (var d in Enumerable.Range(1, DaysInMonth))
+                        {
+                            var date = new DateTime(calendarMonth.Year, calendarMonth.Month, d);
+                            <div class="day @(date.Date == DateTime.Today ? "today" : "") @(deadlineDays.Contains(date.Date) ? "has-dl" : "")">@d</div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head">
+                        <h5 class="card-title">My Media Ingest</h5>
+                        <a class="head-link" href="/ingest">Open ingest</a>
+                    </div>
+                    <div class="queue-row">
+                        <div class="queue-label"><span class="queue-dot dot-warning"></span>Queued</div>
+                        <div class="queue-count">@ingestQueued</div>
+                    </div>
+                    <div class="queue-row">
+                        <div class="queue-label"><span class="queue-dot dot-info"></span>Processing</div>
+                        <div class="queue-count">@ingestProcessing</div>
+                    </div>
+                    <div class="queue-row">
+                        <div class="queue-label"><span class="queue-dot dot-success"></span>Completed</div>
+                        <div class="queue-count">@ingestCompleted</div>
+                    </div>
+                    <div class="queue-row">
+                        <div class="queue-label"><span class="queue-dot dot-danger"></span>Failed</div>
+                        <div class="queue-count">@ingestFailed</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (isProducer)
+    {
+        <div class="greeting">
+            <h2>@Greeting@(displayName is not null ? $", {displayName}" : "")</h2>
+            <p>@ProducerSummaryLine</p>
+        </div>
+
+        <div class="dash-stats">
+            <div class="stat-icon-card" @onclick='() => Nav.NavigateTo("/stories")'>
+                <div class="stat-ico ico-blue"><iconify-icon icon="mdi:plus-circle-outline" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@todayStories.Count</div>
+                    <div class="dash-stat-label">Today's Stories</div>
+                </div>
+            </div>
+            <div class="stat-icon-card" @onclick='() => Nav.NavigateTo("/stories")'>
+                <div class="stat-ico ico-info"><iconify-icon icon="mdi:file-document-outline" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@waitingReview.Count</div>
+                    <div class="dash-stat-label">Waiting for Review</div>
+                </div>
+            </div>
+            <div class="stat-icon-card" @onclick='() => Nav.NavigateTo("/rundown")'>
+                <div class="stat-ico ico-green"><iconify-icon icon="mdi:check-bold" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@(board?.Items.Count ?? 0)</div>
+                    <div class="dash-stat-label">Rundown Items</div>
+                </div>
+            </div>
+            <div class="stat-icon-card" @onclick='() => Nav.NavigateTo("/stories")'>
+                <div class="stat-ico ico-red"><iconify-icon icon="mdi:exclamation-thick" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@breakingStories.Count</div>
+                    <div class="dash-stat-label">Breaking Stories</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="producer-grid">
+            <div class="card">
+                <div class="card-head">
+                    <h5 class="card-title">Waiting for Review</h5>
+                    <a class="head-link" href="/stories">All Stories</a>
+                </div>
+
+                @if (!waitingReview.Any())
+                {
+                    <p class="empty-text">Tidak ada story yang menunggu review.</p>
+                }
+                else
+                {
+                    <ul class="dash-list">
+                        @foreach (var s in waitingReview)
+                        {
+                            var sid = s.Id;
+                            <li class="dash-item" @onclick="() => OpenStory(sid)">
+                                <div class="dash-item-body">
+                                    <span class="dash-item-title">@s.Title</span>
+                                    <span class="dash-item-meta">Deadline: @FormatDeadline(s.Deadline)@ReviewLocation(s.Id)</span>
+                                </div>
+                                <span class="chip chip-sm @PriorityChipClass(s.Priority)">@s.Priority</span>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+
+            <div class="card">
+                <div class="card-head">
+                    <h5 class="card-title">Rundown Status</h5>
+                    <a class="head-link" href="/rundown">Open rundown</a>
+                </div>
+
+                @if (board is null)
+                {
+                    <p class="empty-text">Belum ada rundown.</p>
+                }
+                else
+                {
+                    <div class="rundown-name">@board.Rundown.Title</div>
+                    <div class="rundown-sub">
+                        @board.Rundown.AirDate.ToString("dd/MM/yyyy") · start @FormatClock((int)board.Rundown.StartTime.TotalSeconds)
+                    </div>
+
+                    <div class="rundown-figures">
+                        <div class="rundown-figure">
+                            <b>@board.Items.Count</b>
+                            <span>Items</span>
+                        </div>
+                        <div class="rundown-figure">
+                            <b>@FormatDuration(board.TotalDurationSeconds)</b>
+                            <span>Total Duration</span>
+                        </div>
+                        <div class="rundown-figure">
+                            <b>@FormatClock(board.OnAirEndSeconds)</b>
+                            <span>On Air End</span>
+                        </div>
+                    </div>
+
+                    @if (board.Items.Any(i => i.StoryStatus == StoryStatus.Killed))
+                    {
+                        <div class="rundown-alert">
+                            <iconify-icon icon="mdi:alert-outline" width="16" height="16"></iconify-icon>
+                            Ada story yang sudah Killed di dalam rundown.
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+    else if (isDesk)
+    {
+        <div class="greeting">
+            <h2>@Greeting@(displayName is not null ? $", {displayName}" : "")</h2>
+            <p>@DeskSummaryLine</p>
+        </div>
+
+        <div class="dash-stats">
+            <div class="stat-icon-card" @onclick='() => Nav.NavigateTo("/stories")'>
+                <div class="stat-ico ico-blue"><iconify-icon icon="mdi:plus-circle-outline" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@storiesToAssign.Count</div>
+                    <div class="dash-stat-label">Needs Assignment</div>
+                </div>
+            </div>
+            <div class="stat-icon-card" @onclick='() => Nav.NavigateTo("/assignments")'>
+                <div class="stat-ico ico-info"><iconify-icon icon="mdi:clipboard-text-outline" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@activeAssignments.Count</div>
+                    <div class="dash-stat-label">Active Assignment</div>
+                </div>
+            </div>
+            <div class="stat-icon-card" @onclick='() => Nav.NavigateTo("/ingest")'>
+                <div class="stat-ico ico-green"><iconify-icon icon="mdi:tray-arrow-down" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@mediaIncoming</div>
+                    <div class="dash-stat-label">Media Incoming</div>
+                </div>
+            </div>
+            <div class="stat-icon-card stat-card-danger" @onclick='() => Nav.NavigateTo("/assignments")'>
+                <div class="stat-ico ico-red"><iconify-icon icon="mdi:exclamation-thick" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@deskDeadlineToday</div>
+                    <div class="dash-stat-label">Deadline Today</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="desk-grid">
+            <div class="card">
+                <div class="card-head">
+                    <h5 class="card-title">Stories to Assign</h5>
+                    <a class="head-link" href="/stories">All Stories</a>
+                </div>
+
+                @if (!storiesToAssign.Any())
+                {
+                    <p class="empty-text">Semua story sudah punya assignment.</p>
+                }
+                else
+                {
+                    <ul class="dash-list">
+                        @foreach (var s in storiesToAssign)
+                        {
+                            var sid = s.Id;
+                            <li class="dash-item" @onclick="() => OpenAssignmentFor(sid)">
+                                <div class="dash-item-body">
+                                    <span class="dash-item-title">@s.Title</span>
+                                    <span class="dash-item-meta">@(s.Category ?? "-") · created @s.CreatedAt.ToString("dd/MM/yyyy")</span>
+                                </div>
+                                <span class="chip chip-sm @ChipClass(s.Status)">@s.Status</span>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+
+            <div class="card">
+                <div class="card-head">
+                    <h5 class="card-title">Active Assignments</h5>
+                    <a class="head-link" href="/assignments">All Stories</a>
+                </div>
+
+                @if (!activeAssignments.Any())
+                {
+                    <p class="empty-text">Belum ada assignment aktif.</p>
+                }
+                else
+                {
+                    <ul class="dash-list">
+                        @foreach (var a in activeAssignments)
+                        {
+                            var sid = a.StoryId;
+                            <li class="dash-item" @onclick="() => OpenStory(sid)">
+                                <div class="dash-item-body">
+                                    <span class="dash-item-title">@StoryTitle(a.StoryId)</span>
+                                    <span class="dash-item-meta">@ReporterNameFor(a.ReporterId) · deadline @FormatDeadline(a.Deadline)</span>
+                                </div>
+                                @if (storiesById.TryGetValue(a.StoryId, out var st))
+                                {
+                                    <span class="chip chip-sm @ChipClass(st.Status)">@st.Status</span>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <h5 class="card-title">Incoming Media</h5>
+                <a class="head-link" href="/ingest">Open Ingest</a>
+            </div>
+            <div class="queue-row">
+                <div class="queue-label"><span class="queue-dot dot-warning"></span>Queued</div>
+                <div class="queue-count">@ingestQueued</div>
+            </div>
+            <div class="queue-row">
+                <div class="queue-label"><span class="queue-dot dot-info"></span>Processing</div>
+                <div class="queue-count">@ingestProcessing</div>
+            </div>
+            <div class="queue-row">
+                <div class="queue-label"><span class="queue-dot dot-success"></span>Completed</div>
+                <div class="queue-count">@ingestCompleted</div>
+            </div>
+            <div class="queue-row">
+                <div class="queue-label"><span class="queue-dot dot-danger"></span>Failed</div>
+                <div class="queue-count">@ingestFailed</div>
+            </div>
+        </div>
+    }
 </div>
 
 @code {
     [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
 
-    private string? displayName;
-    private List<string> roles = new();
-    private List<LinkItem> VisibleLinks = new();
+    private record StoryInfo(int VersionCount, int MediaCount);
 
-    private static readonly List<LinkItem> AllLinks = new()
+    private bool loading = true;
+    private bool isReporter;
+    private bool isProducer;
+    private bool isDesk;
+
+    private List<Story> storiesToAssign = new();
+    private List<Assignment> activeAssignments = new();
+    private List<UserSummary> allReporters = new();
+    private int mediaIncoming;
+    private int deskDeadlineToday;
+
+    private List<Story> todayStories = new();
+    private List<Story> waitingReview = new();
+    private List<Story> breakingStories = new();
+    private RundownBoard? board;
+    private Dictionary<Guid, Assignment> assignmentByStoryId = new();
+    private string? displayName;
+    private Guid currentUserId;
+
+    private List<Assignment> myAssignments = new();
+    private List<Story> myStories = new();
+    private Dictionary<Guid, Story> storiesById = new();
+    private Dictionary<Guid, StoryInfo> storyInfo = new();
+    private HashSet<DateTime> deadlineDays = new();
+
+    private int ingestQueued, ingestProcessing, ingestCompleted, ingestFailed;
+    private int deadlineToday;
+
+    private DateTime calendarMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+
+    private int LeadingBlanks => (int)calendarMonth.DayOfWeek;
+    private int DaysInMonth => DateTime.DaysInMonth(calendarMonth.Year, calendarMonth.Month);
+
+    private string Greeting
     {
-        new("Stories", "/stories", new[] { "Reporter", "Producer", "AssignmentDesk" }),
-        new("Assignments", "/assignments", new[] { "Reporter", "Producer", "AssignmentDesk" }),
-        new("Rundown", "/rundown", new[] { "Producer" }),
-        new("Ingest", "/ingest", new[] { "Reporter", "IngestOperator", "AssignmentDesk" }),
-    };
+        get
+        {
+            var hour = DateTime.Now.Hour;
+            if (hour < 11) return "Good morning";
+            if (hour < 15) return "Good afternoon";
+            return "Good evening";
+        }
+    }
+
+    private string DeskSummaryLine =>
+        $"{storiesToAssign.Count} {(storiesToAssign.Count == 1 ? "story needs" : "stories need")} a reporter assigned.";
+
+    private string ProducerSummaryLine =>
+        $"{waitingReview.Count} {(waitingReview.Count == 1 ? "story is" : "stories are")} waiting for your review today.";
+
+    private string SummaryLine =>
+        $"{myAssignments.Count} assignment{(myAssignments.Count == 1 ? "" : "s")} and {deadlineToday} deadline{(deadlineToday == 1 ? "" : "s")} today.";
 
     protected override async Task OnInitializedAsync()
     {
         var user = (await AuthState!).User;
-        roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
-
-        VisibleLinks = AllLinks.Where(l => l.Roles.Any(user.IsInRole)).ToList();
+        isReporter = user.IsInRole("Reporter");
+        isProducer = user.IsInRole("Producer");
+        isDesk = user.IsInRole("AssignmentDesk");
 
         var idClaim = user.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (Guid.TryParse(idClaim, out var userId))
+        Guid.TryParse(idClaim, out currentUserId);
+
+        if (currentUserId != Guid.Empty)
         {
-            var summaries = await UserLookup.GetUsersByIdsAsync(new[] { userId });
+            var summaries = await UserLookup.GetUsersByIdsAsync(new[] { currentUserId });
             displayName = summaries.FirstOrDefault()?.Name;
         }
+
+        if (isReporter && currentUserId != Guid.Empty)
+        {
+            var allStories = await StoryService.GetAllStoriesAsync();
+            storiesById = allStories.ToDictionary(s => s.Id, s => s);
+
+            myStories = allStories
+                .Where(s => s.ReporterId == currentUserId
+                            && s.Status != StoryStatus.Published
+                            && s.Status != StoryStatus.Killed)
+                .OrderBy(s => s.Deadline ?? DateTime.MaxValue)
+                .ToList();
+
+            myAssignments = (await AssignmentService.GetAssignmentsForReporterAsync(currentUserId))
+                .OrderBy(a => a.Deadline ?? DateTime.MaxValue)
+                .ToList();
+
+            foreach (var s in myStories)
+            {
+                var summary = await ScriptService.GetForStoryAsync(s.Id);
+                var media = await IngestService.GetStoryMediaAsync(s.Id);
+                storyInfo[s.Id] = new StoryInfo(summary.Versions.Count, media.Count);
+            }
+
+            deadlineDays = allStories
+                .Where(s => s.ReporterId == currentUserId && s.Deadline.HasValue)
+                .Select(s => s.Deadline!.Value.Date)
+                .ToHashSet();
+
+            deadlineToday = myStories.Count(s => s.Deadline?.Date == DateTime.Today);
+
+            var jobs = (await IngestService.GetQueueAsync())
+                .Where(j => j.CreatedBy == currentUserId)
+                .ToList();
+
+            ingestQueued = jobs.Count(j => j.Status == IngestJobStatus.Queued);
+            ingestProcessing = jobs.Count(j => j.Status == IngestJobStatus.Processing);
+            ingestCompleted = jobs.Count(j => j.Status == IngestJobStatus.Completed);
+            ingestFailed = jobs.Count(j => j.Status == IngestJobStatus.Failed);
+        }
+
+        if (isProducer)
+        {
+            var allStories = await StoryService.GetAllStoriesAsync();
+            var today = DateTime.UtcNow.Date;
+
+            todayStories = allStories.Where(s => s.CreatedAt.Date == today).ToList();
+
+            waitingReview = allStories
+                .Where(s => s.Status == StoryStatus.InReview)
+                .OrderBy(s => s.Deadline ?? DateTime.MaxValue)
+                .ToList();
+
+            breakingStories = allStories
+                .Where(s => s.Priority == StoryPriority.Breaking
+                            && s.Status != StoryStatus.Published
+                            && s.Status != StoryStatus.Killed)
+                .ToList();
+
+            assignmentByStoryId = (await AssignmentService.GetAllAssignmentsAsync())
+                .GroupBy(a => a.StoryId)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            board = await RundownService.GetBoardAsync(null);
+        }
+
+        if (isDesk)
+        {
+            var allStories = await StoryService.GetAllStoriesAsync();
+            storiesById = allStories.ToDictionary(s => s.Id, s => s);
+
+            var assignments = await AssignmentService.GetAllAssignmentsAsync();
+            var assignedStoryIds = assignments.Select(a => a.StoryId).ToHashSet();
+
+            storiesToAssign = allStories
+                .Where(s => !assignedStoryIds.Contains(s.Id)
+                            && s.Status != StoryStatus.Published
+                            && s.Status != StoryStatus.Killed)
+                .OrderByDescending(s => s.CreatedAt)
+                .ToList();
+
+            activeAssignments = assignments
+                .Where(a => storiesById.TryGetValue(a.StoryId, out var st)
+                            && st.Status != StoryStatus.Published
+                            && st.Status != StoryStatus.Killed)
+                .OrderBy(a => a.Deadline ?? DateTime.MaxValue)
+                .ToList();
+
+            allReporters = await AssignmentService.GetReportersAsync();
+
+            deskDeadlineToday = activeAssignments.Count(a => a.Deadline?.Date == DateTime.Today);
+
+            var jobs = await IngestService.GetQueueAsync();
+            ingestQueued = jobs.Count(j => j.Status == IngestJobStatus.Queued);
+            ingestProcessing = jobs.Count(j => j.Status == IngestJobStatus.Processing);
+            ingestCompleted = jobs.Count(j => j.Status == IngestJobStatus.Completed);
+            ingestFailed = jobs.Count(j => j.Status == IngestJobStatus.Failed);
+            mediaIncoming = ingestQueued + ingestProcessing;
+        }
+
+        loading = false;
     }
 
-    private record LinkItem(string Label, string Href, string[] Roles);
+    private void OpenAssignmentFor(Guid storyId) =>
+        Nav.NavigateTo($"/stories/{storyId}?highlight=assignment#assignment-card");
+
+    private string ReporterNameFor(Guid reporterId) =>
+        allReporters.FirstOrDefault(r => r.Id == reporterId)?.Name ?? "Unassigned";
+
+    private string ReviewLocation(Guid storyId)
+    {
+        if (assignmentByStoryId.TryGetValue(storyId, out var a) && !string.IsNullOrWhiteSpace(a.Location))
+        {
+            return " · Location: " + a.Location;
+        }
+        return string.Empty;
+    }
+
+    private void PrevMonth() => calendarMonth = calendarMonth.AddMonths(-1);
+    private void NextMonth() => calendarMonth = calendarMonth.AddMonths(1);
+
+    private void OpenStory(Guid id) => Nav.NavigateTo($"/stories/{id}");
+
+    private string StoryTitle(Guid storyId) =>
+        storiesById.TryGetValue(storyId, out var s) ? s.Title : "(unknown story)";
+
+    private static string FormatDeadline(DateTime? deadline)
+    {
+        if (deadline is null) return "-";
+        var d = deadline.Value;
+        if (d.Date == DateTime.Today) return $"Today, {d:HH:mm}";
+        return d.ToString("dd/MM/yyyy HH:mm");
+    }
+
+    // No percent field exists on Story — progress is derived from the status ladder.
+    private static int ProgressPercent(StoryStatus status) => status switch
+    {
+        StoryStatus.Draft => 15,
+        StoryStatus.Assigned => 30,
+        StoryStatus.InProgress => 60,
+        StoryStatus.InReview => 80,
+        StoryStatus.Approved => 100,
+        StoryStatus.Published => 100,
+        _ => 0
+    };
+
+    private static string StoryCardClass(StoryStatus status) => status switch
+    {
+        StoryStatus.InReview => "sc-review",
+        StoryStatus.Approved => "sc-approved",
+        StoryStatus.Killed => "sc-revision",
+        _ => "sc-inprogress"
+    };
+
+    private static string StoryCardIcon(StoryStatus status) => status switch
+    {
+        StoryStatus.InReview => "mdi:eye-outline",
+        StoryStatus.Approved => "mdi:check-decagram-outline",
+        StoryStatus.Killed => "mdi:alert-circle-outline",
+        _ => "mdi:file-document-edit-outline"
+    };
+
+    private static string FormatDuration(int totalSeconds)
+    {
+        var span = TimeSpan.FromSeconds(Math.Max(0, totalSeconds));
+        return $"{(int)span.TotalMinutes:00}:{span.Seconds:00}";
+    }
+
+    private static string FormatClock(int totalSeconds)
+    {
+        var normalized = ((totalSeconds % 86400) + 86400) % 86400;
+        return TimeSpan.FromSeconds(normalized).ToString(@"hh\:mm\:ss");
+    }
+
+    private static string ChipClass(StoryStatus status) => status switch
+    {
+        StoryStatus.Draft => "chip-draft",
+        StoryStatus.InProgress => "chip-inprogress",
+        StoryStatus.InReview => "chip-review",
+        StoryStatus.Approved => "chip-approved",
+        StoryStatus.Published => "chip-published",
+        StoryStatus.Killed => "chip-killed",
+        _ => "chip-assigned"
+    };
+
+    private static string PriorityChipClass(StoryPriority priority) => priority switch
+    {
+        StoryPriority.Breaking => "chip-priority-breaking",
+        StoryPriority.Urgent => "chip-priority-urgent",
+        StoryPriority.High => "chip-priority-high",
+        _ => "chip-priority-normal"
+    };
 }
