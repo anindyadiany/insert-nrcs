@@ -17,12 +17,14 @@ public class StoryService
     private readonly IStoryRepository _repository;
     private readonly StoryWorkflowService _workflow;
     private readonly AuditLogService _auditLog;
+    private readonly INotificationService _notifications;
 
-    public StoryService(IStoryRepository repository, StoryWorkflowService workflow, AuditLogService auditLog)
+    public StoryService(IStoryRepository repository, StoryWorkflowService workflow, AuditLogService auditLog, INotificationService notifications)
     {
         _repository = repository;
         _workflow = workflow;
         _auditLog = auditLog;
+        _notifications = notifications;
     }
 
     public async Task<Story> CreateStoryAsync(CreateStoryRequest request)
@@ -63,6 +65,7 @@ public class StoryService
         await _repository.SaveChangesAsync();
 
         await _auditLog.LogAsync(userId, "StatusChanged", "Story", storyId, oldStatus.ToString(), newStatus.ToString());
+        await _notifications.StoryStatusChangedAsync(storyId, story.ReporterId);
     }
 
     private static string GenerateSlug(string title)

@@ -6,6 +6,7 @@ public interface IRundownRepository
 {
     Task<Rundown?> GetLatestAsync();
     Task<Rundown?> GetByIdAsync(Guid id);
+    Task<List<Rundown>> GetAllAsync();
     Task AddAsync(Rundown rundown);
 
     Task<List<RundownItem>> GetItemsAsync(Guid rundownId);

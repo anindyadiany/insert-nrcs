@@ -6,12 +6,15 @@
 @using System.Globalization
 @using Insert.Application.Stories
 @using Insert.Domain.Entities
+@using Microsoft.AspNetCore.SignalR.Client
 @attribute [Authorize]
+@implements IAsyncDisposable
 @inject StoryService StoryService
 @inject AssignmentService AssignmentService
 @inject ScriptService ScriptService
 @inject IngestService IngestService
 @inject RundownService RundownService
+@inject AuditLogService AuditLog
 @inject IUserLookupService UserLookup
 @inject NavigationManager Nav
 
@@ -22,7 +25,7 @@
     {
         <p class="loading">Loading...</p>
     }
-    else if (!isReporter && !isProducer && !isDesk)
+    else if (!isReporter && !isProducer && !isDesk && !isIngest && !isAdmin)
     {
         <div class="story-header">
             <h1 class="story-title">Dashboard</h1>
@@ -32,7 +35,7 @@
             <p class="empty-text">Dashboard untuk role ini belum tersedia.</p>
         </div>
     }
-    else if (isReporter && !isProducer && !isDesk)
+    else if (isReporter && !isProducer && !isDesk && !isIngest && !isAdmin)
     {
         <div class="greeting">
             <h2>@Greeting@(displayName is not null ? $", {displayName}" : "")</h2>
@@ -431,6 +434,182 @@
             </div>
         </div>
     }
+    else if (isIngest)
+    {
+        <div class="greeting">
+            <h2>@Greeting@(displayName is not null ? $", {displayName}" : "")</h2>
+            <p>@IngestSummaryLine</p>
+        </div>
+
+        <div class="dash-stats">
+            <div class="stat-icon-card" @onclick='() => Nav.NavigateTo("/ingest")'>
+                <div class="stat-ico ico-info"><iconify-icon icon="mdi:progress-clock" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@ingestProcessing</div>
+                    <div class="dash-stat-label">Processing</div>
+                </div>
+            </div>
+            <div class="stat-icon-card" @onclick='() => Nav.NavigateTo("/ingest")'>
+                <div class="stat-ico ico-amber"><iconify-icon icon="mdi:tray-full-outline" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@ingestQueued</div>
+                    <div class="dash-stat-label">Queue</div>
+                </div>
+            </div>
+            <div class="stat-icon-card" @onclick='() => Nav.NavigateTo("/ingest")'>
+                <div class="stat-ico ico-green"><iconify-icon icon="mdi:check-circle-outline" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@ingestCompleted</div>
+                    <div class="dash-stat-label">Completed</div>
+                </div>
+            </div>
+            <div class="stat-icon-card stat-card-danger" @onclick='() => Nav.NavigateTo("/ingest")'>
+                <div class="stat-ico ico-red"><iconify-icon icon="mdi:close-circle-outline" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@(ingestFailed > 0 ? ingestFailed.ToString() : "-")</div>
+                    <div class="dash-stat-label">Failed</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="desk-grid">
+            <div class="card">
+                <div class="card-head">
+                    <h5 class="card-title">Ingest Queue</h5>
+                    <a class="head-link" href="/ingest">Open Ingest</a>
+                </div>
+
+                @if (!activeJobs.Any())
+                {
+                    <p class="empty-text">Tidak ada job aktif di antrian.</p>
+                }
+                else
+                {
+                    <ul class="dash-list">
+                        @foreach (var j in activeJobs)
+                        {
+                            <li class="dash-item">
+                                <div class="dash-item-body">
+                                    <span class="dash-item-title">@j.OriginalFilename</span>
+                                    <span class="dash-item-meta">@JobDetail(j)</span>
+                                </div>
+                                <span class="chip chip-sm @JobChipClass(j.Status)">@j.Status</span>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+
+            <div class="card">
+                <div class="card-head">
+                    <h5 class="card-title">Storage Status</h5>
+                </div>
+
+                <div class="storage-row">
+                    <div class="storage-head">
+                        <span>Ready Media</span>
+                        <span>@FormatBytes(readyBytes) · @readyCount files</span>
+                    </div>
+                    <div class="storage-track"><div class="storage-fill" style="width:100%"></div></div>
+                </div>
+
+                <div class="storage-row">
+                    <div class="storage-head">
+                        <span>Proxies</span>
+                        <span>@proxyCount of @readyCount files</span>
+                    </div>
+                    <div class="storage-track"><div class="storage-fill" style="width:@(Share(proxyCount, readyCount))%"></div></div>
+                </div>
+
+                <div class="storage-row">
+                    <div class="storage-head">
+                        <span>Unattached</span>
+                        <span>@FormatBytes(unattachedBytes) · @unattachedCount files</span>
+                    </div>
+                    <div class="storage-track"><div class="storage-fill" style="width:@(Share(unattachedCount, readyCount))%"></div></div>
+                </div>
+
+                <p class="storage-note">Bars show share of ready media. Storage capacity limits are not configured.</p>
+            </div>
+        </div>
+    }
+    else if (isAdmin)
+    {
+        <div class="greeting">
+            <h2>@Greeting@(displayName is not null ? $", {displayName}" : "")</h2>
+            <p>@adminUserTotal users across @roleCounts.Count roles.</p>
+        </div>
+
+        <div class="dash-stats">
+            <div class="stat-icon-card">
+                <div class="stat-ico ico-blue"><iconify-icon icon="mdi:account-group-outline" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@adminUserTotal</div>
+                    <div class="dash-stat-label">Users</div>
+                </div>
+            </div>
+            <div class="stat-icon-card">
+                <div class="stat-ico ico-info"><iconify-icon icon="mdi:account-key-outline" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@roleCounts.Count</div>
+                    <div class="dash-stat-label">Roles</div>
+                </div>
+            </div>
+            <div class="stat-icon-card" @onclick='() => Nav.NavigateTo("/stories")'>
+                <div class="stat-ico ico-green"><iconify-icon icon="mdi:file-document-multiple-outline" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@adminStoryTotal</div>
+                    <div class="dash-stat-label">Stories</div>
+                </div>
+            </div>
+            <div class="stat-icon-card @(ingestFailed > 0 ? "stat-card-danger" : "")" @onclick='() => Nav.NavigateTo("/ingest")'>
+                <div class="stat-ico ico-red"><iconify-icon icon="mdi:exclamation-thick" width="34" height="34"></iconify-icon></div>
+                <div>
+                    <div class="dash-stat-num">@(ingestFailed > 0 ? ingestFailed.ToString() : "-")</div>
+                    <div class="dash-stat-label">Failed Jobs</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="desk-grid">
+            <div class="card">
+                <div class="card-head">
+                    <h5 class="card-title">User by Role</h5>
+                </div>
+                @foreach (var rc in roleCounts)
+                {
+                    <div class="queue-row">
+                        <div class="queue-label">@rc.Key</div>
+                        <div class="queue-count">@rc.Value</div>
+                    </div>
+                }
+            </div>
+
+            <div class="card">
+                <div class="card-head">
+                    <h5 class="card-title">Recent Activity</h5>
+                </div>
+                @if (!recentActivity.Any())
+                {
+                    <p class="empty-text">Belum ada aktivitas tercatat.</p>
+                }
+                else
+                {
+                    <ul class="dash-list">
+                        @foreach (var log in recentActivity)
+                        {
+                            <li class="dash-item">
+                                <div class="dash-item-body">
+                                    <span class="dash-item-title">@Spaced(log.Action)</span>
+                                    <span class="dash-item-meta">@ActorName(log.UserId) · @log.EntityType · @log.Timestamp.ToLocalTime().ToString("dd/MM HH:mm")</span>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    }
 </div>
 
 @code {
@@ -442,6 +621,17 @@
     private bool isReporter;
     private bool isProducer;
     private bool isDesk;
+    private bool isIngest;
+    private bool isAdmin;
+
+    private Dictionary<string, int> roleCounts = new();
+    private List<AuditLog> recentActivity = new();
+    private Dictionary<Guid, string> actorNames = new();
+    private int adminUserTotal, adminStoryTotal;
+
+    private List<IngestJob> activeJobs = new();
+    private long readyBytes, unattachedBytes;
+    private int readyCount, unattachedCount, proxyCount;
 
     private List<Story> storiesToAssign = new();
     private List<Assignment> activeAssignments = new();
@@ -482,6 +672,11 @@
         }
     }
 
+    private string IngestSummaryLine =>
+        ingestFailed > 0
+            ? $"{ingestFailed} job{(ingestFailed == 1 ? "" : "s")} failed and need a retry."
+            : $"{ingestQueued + ingestProcessing} job{(ingestQueued + ingestProcessing == 1 ? "" : "s")} in the pipeline.";
+
     private string DeskSummaryLine =>
         $"{storiesToAssign.Count} {(storiesToAssign.Count == 1 ? "story needs" : "stories need")} a reporter assigned.";
 
@@ -491,12 +686,44 @@
     private string SummaryLine =>
         $"{myAssignments.Count} assignment{(myAssignments.Count == 1 ? "" : "s")} and {deadlineToday} deadline{(deadlineToday == 1 ? "" : "s")} today.";
 
+    private HubConnection? hubConnection;
+
     protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardAsync();
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Nav.ToAbsoluteUri("/hubs/nrcs"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<Guid>("StoryStatusChanged", (_) =>
+            InvokeAsync(async () => { await LoadDashboardAsync(); StateHasChanged(); }));
+
+        hubConnection.On("AssignmentChanged", () =>
+            InvokeAsync(async () => { await LoadDashboardAsync(); StateHasChanged(); }));
+
+        await hubConnection.StartAsync();
+        if (currentUserId != Guid.Empty)
+            await hubConnection.SendAsync("JoinUserGroup", currentUserId);
+        if (isProducer)
+            await hubConnection.SendAsync("JoinRoleGroup", "Producer");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+            await hubConnection.DisposeAsync();
+    }
+
+    private async Task LoadDashboardAsync()
     {
         var user = (await AuthState!).User;
         isReporter = user.IsInRole("Reporter");
         isProducer = user.IsInRole("Producer");
         isDesk = user.IsInRole("AssignmentDesk");
+        isIngest = user.IsInRole("IngestOperator");
+        isAdmin = user.IsInRole("Administrator");
 
         var idClaim = user.FindFirstValue(ClaimTypes.NameIdentifier);
         Guid.TryParse(idClaim, out currentUserId);
@@ -606,7 +833,93 @@
             mediaIncoming = ingestQueued + ingestProcessing;
         }
 
+        if (isIngest)
+        {
+            var jobs = await IngestService.GetQueueAsync();
+            ingestQueued = jobs.Count(j => j.Status == IngestJobStatus.Queued);
+            ingestProcessing = jobs.Count(j => j.Status == IngestJobStatus.Processing);
+            ingestCompleted = jobs.Count(j => j.Status == IngestJobStatus.Completed);
+            ingestFailed = jobs.Count(j => j.Status == IngestJobStatus.Failed);
+
+            activeJobs = jobs
+                .Where(j => j.Status != IngestJobStatus.Completed)
+                .OrderBy(j => j.Status == IngestJobStatus.Failed ? 0 : 1)
+                .ThenByDescending(j => j.CreatedAt)
+                .Take(8)
+                .ToList();
+
+            var ready = await IngestService.GetAvailableAssetsAsync();
+            readyCount = ready.Count;
+            readyBytes = ready.Sum(a => a.FileSize);
+            proxyCount = ready.Count(a => !string.IsNullOrWhiteSpace(a.ProxyPath));
+
+            var unattached = await IngestService.GetUnattachedAssetsAsync();
+            unattachedCount = unattached.Count;
+            unattachedBytes = unattached.Sum(a => a.FileSize);
+        }
+
+        if (isAdmin)
+        {
+            var roles = new[] { "Reporter", "Producer", "AssignmentDesk", "IngestOperator", "Administrator" };
+            var seen = new HashSet<Guid>();
+            foreach (var role in roles)
+            {
+                var users = await UserLookup.GetUsersInRoleAsync(role);
+                roleCounts[Spaced(role)] = users.Count;
+                foreach (var u in users)
+                {
+                    seen.Add(u.Id);
+                    actorNames[u.Id] = u.Name;
+                }
+            }
+            adminUserTotal = seen.Count;
+            adminStoryTotal = (await StoryService.GetAllStoriesAsync()).Count;
+
+            var jobs = await IngestService.GetQueueAsync();
+            ingestFailed = jobs.Count(j => j.Status == IngestJobStatus.Failed);
+
+            recentActivity = await AuditLog.GetRecentAsync(8);
+        }
+
         loading = false;
+    }
+
+    private string ActorName(Guid userId) =>
+        actorNames.TryGetValue(userId, out var n) ? n : "Unknown";
+
+    private static string Spaced(string value) =>
+        System.Text.RegularExpressions.Regex.Replace(value, "(?<=[a-z])(?=[A-Z])", " ");
+
+    private static string JobDetail(IngestJob j)
+    {
+        if (j.Status == IngestJobStatus.Failed)
+        {
+            return string.IsNullOrWhiteSpace(j.ErrorMessage) ? "Failed" : j.ErrorMessage;
+        }
+        if (j.Status == IngestJobStatus.Processing)
+        {
+            return $"Processing · {j.Progress}%";
+        }
+        return j.Status.ToString();
+    }
+
+    private static string JobChipClass(IngestJobStatus status) => status switch
+    {
+        IngestJobStatus.Processing => "chip-inprogress",
+        IngestJobStatus.Queued => "chip-priority-urgent",
+        IngestJobStatus.Failed => "chip-killed",
+        _ => "chip-published"
+    };
+
+    private static int Share(int part, int total) =>
+        total <= 0 ? 0 : (int)Math.Round(part * 100.0 / total);
+
+    private static string FormatBytes(long bytes)
+    {
+        if (bytes >= 1073741824) return $"{bytes / 1073741824.0:0.#} GB";
+        if (bytes >= 1048576) return $"{bytes / 1048576.0:0.#} MB";
+        if (bytes >= 1024) return $"{bytes / 1024.0:0.#} KB";
+        return $"{bytes} B";
     }
 
     private void OpenAssignmentFor(Guid storyId) =>

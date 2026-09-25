@@ -11,14 +11,14 @@ Table role {
 }
 
 Table user_role {
-  user_id uuid
-  role_id uuid
+  user_id uuid [not null]
+  role_id uuid [not null]
 }
 
 Table assignment {
   id uuid [pk]
-  story_id uuid
-  reporter_id uuid
+  story_id uuid [not null]
+  reporter_id uuid [not null]
   location varchar
   event varchar
   deadline timestamp
@@ -36,9 +36,8 @@ Table story {
   program varchar
   priority varchar
   status varchar
-  reporter_id uuid
-  producer_id uuid
-  assignment_id uuid
+  reporter_id uuid [null]
+  producer_id uuid [null]
   deadline timestamp
   created_at timestamp
   updated_at timestamp
@@ -47,8 +46,8 @@ Table story {
 
 Table story_media {
   id uuid [pk]
-  story_id uuid
-  media_asset_id uuid
+  story_id uuid [not null]
+  media_asset_id uuid [not null]
   role varchar
   sort_order int
   added_at timestamp
@@ -56,18 +55,19 @@ Table story_media {
 
 Table media_asset {
   id uuid [pk]
-  ingest_job_id uuid
+  ingest_job_id uuid [null]
   filename varchar
   original_filename varchar
   storage_path varchar
   file_size bigint
-  duration varchar
+  duration_seconds int
   format varchar
   codec varchar
   resolution varchar
   frame_rate varchar
   thumbnail_path varchar
   proxy_path varchar
+  checksum varchar
   ingest_status varchar
   retention_status varchar
   created_at timestamp
@@ -75,27 +75,30 @@ Table media_asset {
 
 Table script {
   id uuid [pk]
-  story_id uuid
+  story_id uuid [not null]
+  content text
   created_at timestamp
+  updated_at timestamp
+  updated_by uuid
 }
 
 Table script_version {
   id uuid [pk]
-  script_id uuid
+  script_id uuid [not null]
   version_number int
-  author_id uuid
+  author_id uuid [not null]
   content text
   word_count int
-  estimated_duration varchar
+  estimated_duration_seconds int
   change_note text
   created_at timestamp
 }
 
 Table approval {
   id uuid [pk]
-  story_id uuid
+  story_id uuid [not null]
   script_version_id uuid
-  reviewer_id uuid
+  reviewer_id uuid [not null]
   decision varchar
   comment text
   created_at timestamp
@@ -103,36 +106,40 @@ Table approval {
 
 Table rundown {
   id uuid [pk]
+  title varchar
   program varchar
   air_date date
-  air_time time
-  status varchar
+  start_time time
   created_at timestamp
 }
 
 Table rundown_item {
   id uuid [pk]
-  rundown_id uuid
-  story_id uuid
+  rundown_id uuid [not null]
   sort_order int
-  start_time time
-  duration varchar
-  status varchar
+  item_type varchar
+  story_id uuid
+  segment_label varchar
+  segment_duration_seconds int
+  created_at timestamp
 }
 
 Table ingest_job {
   id uuid [pk]
   source_type varchar
+  source_file_path varchar
+  original_filename varchar
   status varchar
   progress int
   error_message text
+  created_by uuid
   created_at timestamp
   completed_at timestamp
 }
 
 Table audit_log {
   id uuid [pk]
-  user_id uuid
+  user_id uuid [not null]
   timestamp timestamp
   action varchar
   entity_type varchar
@@ -147,7 +154,6 @@ Ref: assignment.story_id > story.id
 Ref: assignment.reporter_id > user.id
 Ref: story.reporter_id > user.id
 Ref: story.producer_id > user.id
-Ref: story.assignment_id > assignment.id
 Ref: story_media.story_id > story.id
 Ref: story_media.media_asset_id > media_asset.id
 Ref: media_asset.ingest_job_id > ingest_job.id

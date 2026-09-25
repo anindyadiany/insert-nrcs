@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Insert.Application.Stories;
 using Insert.Infrastructure.Stories;
 using Insert.Media;
+using Insert.Web.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +60,9 @@ builder.Services.AddScoped<ApprovalService>();
 //10
 builder.Services.AddScoped<IRundownRepository, RundownRepository>();
 builder.Services.AddScoped<RundownService>();
+//11
+builder.Services.AddSignalR();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
@@ -85,6 +89,8 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+app.MapHub<NrcsHub>("/hubs/nrcs");
+
 app.MapGet("/media-thumbnail/{id:guid}", async (Guid id, InsertDbContext db) =>
 {
     var asset = await db.MediaAssets.FindAsync(id);
@@ -96,4 +102,3 @@ app.MapGet("/media-thumbnail/{id:guid}", async (Guid id, InsertDbContext db) =>
 });
 
 app.Run();
-

@@ -7,14 +7,18 @@
 @using System.Security.Claims
 @using System.Globalization
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.SignalR.Client
 @attribute [Authorize(Roles = "Reporter,Producer,AssignmentDesk")]
 @implements IDisposable
+@implements IAsyncDisposable
+@inject NavigationManager Nav
 @inject StoryService StoryService
 @inject AssignmentService AssignmentService
 @inject StoryWorkflowService WorkflowService
 @inject IngestService IngestService
 @inject ScriptService ScriptService
 @inject ApprovalService ApprovalService
+@inject IUserLookupService UserLookup
 
 <PageTitle>@(story?.Title ?? "Story") - INSERT NRCS</PageTitle>
 
@@ -56,13 +60,31 @@
 
         @if (LatestRevisionRequest is not null)
         {
-            <div class="revision-alert">
-                <div class="revision-alert-head">
-                    <iconify-icon icon="mdi:arrow-u-left-top" width="18" height="18"></iconify-icon>
-                    <span class="revision-label">Revision Requested</span>
-                    <span class="revision-date">@LatestRevisionRequest.CreatedAt.ToLocalTime().ToString("dd/MM HH:mm")</span>
+        <div class="revision-alert">
+                <div class="revision-icon">
+                    <iconify-icon icon="mdi:message-alert-outline" width="22" height="22"></iconify-icon>
                 </div>
-                <p class="revision-comment">@LatestRevisionRequest.Comment</p>
+
+                <div class="revision-body">
+                    <div class="revision-alert-head">
+                        <span class="revision-label">Revision Requested</span>
+                        <span class="revision-date">@LatestRevisionRequest.CreatedAt.ToLocalTime().ToString("dd MMM, HH:mm")</span>
+                    </div>
+
+                    <p class="revision-by">
+                        by @ReviewerName(LatestRevisionRequest.ReviewerId) · producer minta perubahan sebelum story ini bisa lanjut
+                    </p>
+
+                    @if (!string.IsNullOrWhiteSpace(LatestRevisionRequest.Comment))
+                    {
+                        <blockquote class="revision-comment">@LatestRevisionRequest.Comment</blockquote>
+                    }
+
+                    <a class="revision-cta" href="@($"/stories/{Id}#script-card")">
+                        <iconify-icon icon="mdi:pencil-outline" width="15" height="15"></iconify-icon>
+                        Perbaiki naskah
+                    </a>
+                </div>
             </div>
         }
 
@@ -267,7 +289,7 @@
         </div>
 
         <!-- ===== Media ===== -->
-        <div class="card script-card">
+        <div class="card script-card" id="script-card">
             <div class="media-layout">
                 <div class="media-form">
                     <h5 class="card-title media-col-title">Media</h5>
@@ -469,6 +491,7 @@
     private Story? story;
     private Assignment? assignment;
     private List<UserSummary> reporters = new();
+    private Dictionary<Guid, string> reviewerNames = new();
 
     private List<StoryMedia> storyMedia = new();
     private List<MediaAsset> availableAssets = new();
@@ -527,10 +550,13 @@ private async Task RestoreVersion()
     {
         var authUser = (await AuthState!).User;
         canManageAssignment = authUser.IsInRole("AssignmentDesk") || authUser.IsInRole("Producer");
+        currentUserId = await GetCurrentUserIdAsync();
 
         story = await StoryService.GetStoryByIdAsync(Id);
         assignment = await AssignmentService.GetAssignmentForStoryAsync(Id);
         reporters = await AssignmentService.GetReportersAsync();
+        reviewerNames = (await UserLookup.GetUsersInRoleAsync("Producer"))
+            .ToDictionary(u => u.Id, u => u.Name);
         RefreshNextStatuses();
 
         storyMedia = await IngestService.GetStoryMediaAsync(Id);
@@ -539,6 +565,62 @@ private async Task RestoreVersion()
         approvalHistory = await ApprovalService.GetHistoryAsync(Id);
 
         await LoadScript();
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Nav.ToAbsoluteUri("/hubs/nrcs"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<Guid>("StoryStatusChanged", (changedStoryId) =>
+        {
+            return InvokeAsync(async () =>
+            {
+                if (changedStoryId == Id)
+                {
+                    story = await StoryService.GetStoryByIdAsync(Id);
+                    approvalHistory = await ApprovalService.GetHistoryAsync(Id);
+                    RefreshNextStatuses();
+                    StateHasChanged();
+                }
+            });
+        });
+
+        hubConnection.On("AssignmentChanged", () =>
+        {
+            return InvokeAsync(async () =>
+            {
+                assignment = await AssignmentService.GetAssignmentForStoryAsync(Id);
+                story = await StoryService.GetStoryByIdAsync(Id);
+                RefreshNextStatuses();
+                StateHasChanged();
+            });
+        });
+
+        hubConnection.On<Guid>("ScriptVersionSaved", (changedStoryId) =>
+        {
+            return InvokeAsync(async () =>
+            {
+                if (changedStoryId == Id)
+                {
+                    await LoadScript();
+                    StateHasChanged();
+                }
+            });
+        });
+
+        await hubConnection.StartAsync();
+        if (currentUserId is Guid uid)
+            await hubConnection.SendAsync("JoinUserGroup", uid);
+        await hubConnection.SendAsync("JoinRoleGroup", "Producer");
+    }
+
+    private HubConnection? hubConnection;
+    private Guid? currentUserId;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+            await hubConnection.DisposeAsync();
     }
 
 private void RefreshNextStatuses()
@@ -556,7 +638,16 @@ private void RefreshNextStatuses()
         var userId = await GetCurrentUserIdAsync();
         if (userId is null) return;
 
-        await StoryService.ChangeStatusAsync(story!.Id, newStatus, userId.Value);
+        try
+        {
+            await StoryService.ChangeStatusAsync(story!.Id, newStatus, userId.Value);
+        }
+        catch (InvalidOperationException)
+        {
+            // Status likely changed elsewhere (another tab/user) since this page loaded — resync and let the
+            // refreshed button reflect the real current status instead of crashing the page.
+        }
+
         story = await StoryService.GetStoryByIdAsync(Id);
         RefreshNextStatuses();
     }
@@ -657,6 +748,7 @@ private void RefreshNextStatuses()
 
         assignment = await AssignmentService.GetAssignmentForStoryAsync(Id);
         story = await StoryService.GetStoryByIdAsync(Id);
+        RefreshNextStatuses();
         editAssign = false;
     }
 
@@ -732,7 +824,7 @@ private void RefreshNextStatuses()
 
         await ScriptService.SaveDraftAsync(Id, scriptDraft, userId.Value);
         await ScriptService.SaveVersionAsync(Id, userId.Value);
-        await LoadScript();
+        //await LoadScript();
         autosaveStatus = "Versi tersimpan";
         showVersions = true;
     }
@@ -744,6 +836,9 @@ private void RefreshNextStatuses()
         var idClaim = user.FindFirstValue(ClaimTypes.NameIdentifier);
         return Guid.TryParse(idClaim, out var userId) ? userId : null;
     }
+
+    private string ReviewerName(Guid reviewerId) =>
+        reviewerNames.TryGetValue(reviewerId, out var n) ? n : "Producer";
 
     private string ReporterName(Guid reporterId) =>
         reporters.FirstOrDefault(r => r.Id == reporterId)?.Name ?? "-";
@@ -776,7 +871,6 @@ private void RefreshNextStatuses()
     private string ChipClass(StoryStatus status) => status switch
     {
         StoryStatus.Draft => "chip-draft",
-        StoryStatus.InProgress => "chip-inprogress",
         StoryStatus.InReview => "chip-review",
         StoryStatus.Approved => "chip-approved",
         StoryStatus.Published => "chip-published",
@@ -786,10 +880,10 @@ private void RefreshNextStatuses()
 
     private string PriorityClass(StoryPriority priority) => priority switch
     {
-        StoryPriority.Breaking => "chip-priority-breaking",
-        StoryPriority.Urgent => "chip-priority-urgent",
-        StoryPriority.High => "chip-priority-high",
-        _ => "chip-priority-normal"
+        StoryPriority.Breaking => "chip-breaking",
+        StoryPriority.Urgent => "chip-urgent",
+        StoryPriority.High => "chip-high",
+        _ => "chip-normal"
     };
 
     public void Dispose() => autosaveCts?.Cancel();

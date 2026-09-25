@@ -46,10 +46,54 @@ public class IngestService
         await _repository.SaveChangesAsync();
     }
 
+    /// Pause a job that hasn't started processing yet, so the worker skips it in the queue.
+    public async Task PauseJobAsync(Guid jobId)
+    {
+        var job = await _repository.GetJobByIdAsync(jobId)
+            ?? throw new KeyNotFoundException("Ingest job not found.");
+
+        if (job.Status != IngestJobStatus.Queued)
+            throw new InvalidOperationException("Hanya job yang masih Queued yang bisa di-pause.");
+
+        job.Status = IngestJobStatus.Paused;
+        await _repository.SaveChangesAsync();
+    }
+
+    /// Resume a paused job, putting it back in the queue.
+    public async Task ResumeJobAsync(Guid jobId)
+    {
+        var job = await _repository.GetJobByIdAsync(jobId)
+            ?? throw new KeyNotFoundException("Ingest job not found.");
+
+        if (job.Status != IngestJobStatus.Paused)
+            throw new InvalidOperationException("Hanya job yang sedang Paused yang bisa di-resume.");
+
+        job.Status = IngestJobStatus.Queued;
+        await _repository.SaveChangesAsync();
+    }
+
+    /// Cancel a job that's still Queued/Paused, or ask an in-flight Processing job to stop
+    /// at its next checkpoint (see ProcessJobAsync).
+    public async Task CancelJobAsync(Guid jobId)
+    {
+        var job = await _repository.GetJobByIdAsync(jobId)
+            ?? throw new KeyNotFoundException("Ingest job not found.");
+
+        if (job.Status is IngestJobStatus.Completed or IngestJobStatus.Cancelled)
+            throw new InvalidOperationException("Job ini sudah selesai atau sudah dibatalkan.");
+
+        job.Status = IngestJobStatus.Cancelled;
+        job.ErrorMessage = "Dibatalkan oleh user.";
+        await _repository.SaveChangesAsync();
+    }
+
     public async Task ProcessJobAsync(Guid jobId)
     {
         var job = await _repository.GetJobByIdAsync(jobId)
             ?? throw new KeyNotFoundException("Ingest job not found.");
+
+        // Skip jobs that were paused/cancelled between being picked up and now.
+        if (job.Status != IngestJobStatus.Queued) return;
 
         try
         {
@@ -71,6 +115,8 @@ public class IngestService
             job.Progress = 60;
             await _repository.SaveChangesAsync();
 
+            if (await IsCancelledAsync(jobId)) { CleanupPartialFile(destinationPath); return; }
+
             string checksum;
             using (var sha256 = SHA256.Create())
             using (var stream = File.OpenRead(destinationPath))
@@ -80,6 +126,8 @@ public class IngestService
             }
             job.Progress = 90;
             await _repository.SaveChangesAsync();
+
+            if (await IsCancelledAsync(jobId)) { CleanupPartialFile(destinationPath); return; }
 
             var probe = await _mediaProcessor.ProbeAsync(destinationPath);
             var thumbnailPath = await _mediaProcessor.GenerateThumbnailAsync(destinationPath, Path.Combine(StorageRoot, "Thumbnails"));
@@ -120,7 +168,21 @@ public class IngestService
         }
     }
 
+    private async Task<bool> IsCancelledAsync(Guid jobId)
+    {
+        var job = await _repository.GetJobByIdAsync(jobId);
+        return job?.Status == IngestJobStatus.Cancelled;
+    }
+
+    private static void CleanupPartialFile(string path)
+    {
+        try { if (File.Exists(path)) File.Delete(path); }
+        catch { /* best-effort cleanup, ignore */ }
+    }
+
     public Task<List<MediaAsset>> GetAvailableAssetsAsync() => _repository.GetAllReadyAssetsAsync();
+
+    public Task<List<MediaAsset>> GetUnattachedAssetsAsync() => _repository.GetReadyUnattachedAssetsAsync();
 
     public async Task AttachMediaToStoryAsync(Guid storyId, Guid mediaAssetId, string? role)
     {

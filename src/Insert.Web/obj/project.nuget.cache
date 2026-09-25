@@ -1,12 +1,15 @@
 {
   "version": 2,
-  "dgSpecHash": "vb6gPUeqltA=",
+  "dgSpecHash": "rIFBcxp5sH8=",
   "success": true,
   "projectFilePath": "/Users/anindya/work/transtv/nrcs/src/Insert.Web/Insert.Web.csproj",
   "expectedPackageFiles": [
     "/Users/anindya/.nuget/packages/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg.sha512",
     "/Users/anindya/.nuget/packages/microsoft.aspnetcore.app.internal.assets/10.0.3/microsoft.aspnetcore.app.internal.assets.10.0.3.nupkg.sha512",
+    "/Users/anindya/.nuget/packages/microsoft.aspnetcore.http.connections.client/9.0.0/microsoft.aspnetcore.http.connections.client.9.0.0.nupkg.sha512",
     "/Users/anindya/.nuget/packages/microsoft.aspnetcore.identity.entityframeworkcore/9.0.0/microsoft.aspnetcore.identity.entityframeworkcore.9.0.0.nupkg.sha512",
+    "/Users/anindya/.nuget/packages/microsoft.aspnetcore.signalr.client/9.0.0/microsoft.aspnetcore.signalr.client.9.0.0.nupkg.sha512",
+    "/Users/anindya/.nuget/packages/microsoft.aspnetcore.signalr.client.core/9.0.0/microsoft.aspnetcore.signalr.client.core.9.0.0.nupkg.sha512",
     "/Users/anindya/.nuget/packages/microsoft.bcl.asyncinterfaces/7.0.0/microsoft.bcl.asyncinterfaces.7.0.0.nupkg.sha512",
     "/Users/anindya/.nuget/packages/microsoft.build.framework/17.8.3/microsoft.build.framework.17.8.3.nupkg.sha512",
     "/Users/anindya/.nuget/packages/microsoft.build.locator/1.7.8/microsoft.build.locator.1.7.8.nupkg.sha512",

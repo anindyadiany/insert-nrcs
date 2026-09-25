@@ -15,6 +15,9 @@ public class RundownRepository : IRundownRepository
     public Task<Rundown?> GetByIdAsync(Guid id) =>
         _context.Rundowns.FirstOrDefaultAsync(r => r.Id == id);
 
+    public Task<List<Rundown>> GetAllAsync() =>
+        _context.Rundowns.OrderByDescending(r => r.AirDate).ThenByDescending(r => r.CreatedAt).ToListAsync();
+
     public async Task AddAsync(Rundown rundown) => await _context.Rundowns.AddAsync(rundown);
 
     public Task<List<RundownItem>> GetItemsAsync(Guid rundownId) =>

@@ -49,6 +49,12 @@ public class RundownBoard
     public int OnAirEndSeconds { get; set; }
 }
 
+public class RundownListItem
+{
+    public Rundown Rundown { get; set; } = null!;
+    public int ItemCount { get; set; }
+}
+
 public class RundownService
 {
     private readonly IRundownRepository _repository;
@@ -56,19 +62,22 @@ public class RundownService
     private readonly IScriptRepository _scriptRepository;
     private readonly IUserLookupService _userLookup;
     private readonly AuditLogService _auditLog;
+    private readonly INotificationService _notifications;
 
     public RundownService(
         IRundownRepository repository,
         IStoryRepository storyRepository,
         IScriptRepository scriptRepository,
         IUserLookupService userLookup,
-        AuditLogService auditLog)
+        AuditLogService auditLog,
+        INotificationService notifications)
     {
         _repository = repository;
         _storyRepository = storyRepository;
         _scriptRepository = scriptRepository;
         _userLookup = userLookup;
         _auditLog = auditLog;
+        _notifications = notifications;
     }
 
     public async Task<Rundown> CreateRundownAsync(CreateRundownRequest request, Guid userId)
@@ -89,6 +98,18 @@ public class RundownService
         await _repository.SaveChangesAsync();
         await _auditLog.LogAsync(userId, "RundownCreated", "Rundown", rundown.Id, null, rundown.Title);
         return rundown;
+    }
+
+       public async Task<List<RundownListItem>> GetAllRundownsAsync()
+    {
+        var rundowns = await _repository.GetAllAsync();
+        var result = new List<RundownListItem>();
+        foreach (var r in rundowns)
+        {
+            var items = await _repository.GetItemsAsync(r.Id);
+            result.Add(new RundownListItem { Rundown = r, ItemCount = items.Count(i => i.ItemType == RundownItemType.Story) });
+        }
+        return result;
     }
 
     public async Task<RundownBoard?> GetBoardAsync(Guid? rundownId)
@@ -226,6 +247,7 @@ public class RundownService
         await _repository.AddItemAsync(item);
         await _repository.SaveChangesAsync();
         await _auditLog.LogAsync(userId, "StoryAddedToRundown", "Rundown", rundownId, null, story.Title);
+        await _notifications.RundownChangedAsync(rundownId);
     }
 
     public async Task AddSegmentAsync(Guid rundownId, AddSegmentRequest request, Guid userId)
@@ -248,6 +270,7 @@ public class RundownService
         await _repository.AddItemAsync(item);
         await _repository.SaveChangesAsync();
         await _auditLog.LogAsync(userId, "SegmentAddedToRundown", "Rundown", rundownId, null, item.SegmentLabel);
+        await _notifications.RundownChangedAsync(rundownId);
     }
 
     public async Task RemoveItemAsync(Guid rundownId, Guid itemId, Guid userId)
@@ -261,6 +284,7 @@ public class RundownService
         await _repository.RemoveItemAsync(item);
         await _repository.SaveChangesAsync();
         await _auditLog.LogAsync(userId, "RundownItemRemoved", "Rundown", rundownId, item.SegmentLabel ?? item.StoryId?.ToString(), null);
+        await _notifications.RundownChangedAsync(rundownId);
     }
 
     public async Task ReorderAsync(Guid rundownId, List<Guid> orderedItemIds)
@@ -275,5 +299,6 @@ public class RundownService
         }
 
         await _repository.SaveChangesAsync();
+        await _notifications.RundownChangedAsync(rundownId);
     }
 }

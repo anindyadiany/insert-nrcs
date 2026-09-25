@@ -19,5 +19,7 @@ public enum IngestJobStatus
     Queued,
     Processing,
     Completed,
-    Failed
+    Failed,
+    Paused,
+    Cancelled
 }

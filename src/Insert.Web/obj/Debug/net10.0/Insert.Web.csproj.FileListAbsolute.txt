@@ -8,7 +8,10 @@
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/bin/Debug/net10.0/Insert.Web.dll
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/bin/Debug/net10.0/Insert.Web.pdb
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/bin/Debug/net10.0/Humanizer.dll
+/Users/anindya/work/transtv/nrcs/src/Insert.Web/bin/Debug/net10.0/Microsoft.AspNetCore.Http.Connections.Client.dll
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/bin/Debug/net10.0/Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
+/Users/anindya/work/transtv/nrcs/src/Insert.Web/bin/Debug/net10.0/Microsoft.AspNetCore.SignalR.Client.dll
+/Users/anindya/work/transtv/nrcs/src/Insert.Web/bin/Debug/net10.0/Microsoft.AspNetCore.SignalR.Client.Core.dll
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/bin/Debug/net10.0/Microsoft.Bcl.AsyncInterfaces.dll
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/bin/Debug/net10.0/Microsoft.Build.Locator.dll
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/bin/Debug/net10.0/Microsoft.CodeAnalysis.dll
@@ -121,6 +124,7 @@
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/scopedcss/Components/Layout/MainLayout.razor.rz.scp.css
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/scopedcss/Components/Layout/NavMenu.razor.rz.scp.css
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/scopedcss/Components/Layout/ReconnectModal.razor.rz.scp.css
+/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/scopedcss/Components/Pages/Dashboard.razor.rz.scp.css
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/scopedcss/Components/Pages/Rundown.razor.rz.scp.css
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/scopedcss/Components/Pages/StoryDetail.razor.rz.scp.css
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/scopedcss/Components/Shared/StoryStatusStepper.razor.rz.scp.css
@@ -187,7 +191,6 @@
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/Insert.Web.pdb
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/Insert.Web.genruntimeconfig.cache
 /Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/ref/Insert.Web.dll
-/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/wu9wsty3xk-{0}-qugrzju5jh-qugrzju5jh.gz
-/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/scopedcss/Components/Pages/Dashboard.razor.rz.scp.css
-/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/n32og7p8pl-{0}-8a6nphj8id-8a6nphj8id.gz
-/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/6ekz0inspa-{0}-8a6nphj8id-8a6nphj8id.gz
+/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/n32og7p8pl-{0}-z1uo80g0tp-z1uo80g0tp.gz
+/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/6ekz0inspa-{0}-z1uo80g0tp-z1uo80g0tp.gz
+/Users/anindya/work/transtv/nrcs/src/Insert.Web/obj/Debug/net10.0/compressed/wu9wsty3xk-{0}-qui82rmu0j-qui82rmu0j.gz

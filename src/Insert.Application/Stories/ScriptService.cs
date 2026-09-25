@@ -14,11 +14,13 @@ public class ScriptService
 
     private readonly IScriptRepository _repository;
     private readonly StoryService _storyService;
+    private readonly INotificationService _notifications;
 
-    public ScriptService(IScriptRepository repository, StoryService storyService)
+    public ScriptService(IScriptRepository repository, StoryService storyService, INotificationService notifications)
     {
         _repository = repository;
         _storyService = storyService;
+        _notifications = notifications;
     }
 
     public static int CountWords(string? content)
@@ -103,6 +105,10 @@ public class ScriptService
 
         await _repository.AddVersionAsync(version);
         await _repository.SaveChangesAsync();
+
+        var story = await _storyService.GetStoryByIdAsync(storyId);
+        await _notifications.ScriptVersionSavedAsync(storyId, story?.ReporterId);
+
         return version;
     }
 

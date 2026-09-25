@@ -18,6 +18,14 @@
         <button class="btn-primary" @onclick="() => showForm = true">ADD NEW STORY</button>
     </div>
 
+    @if (isReporter)
+    {
+        <div class="story-filter-toggle" style="display:flex; gap:8px; margin-bottom:16px;">
+            <button class="filter-chip @(showMineOnly ? "" : "active")" @onclick="() => SetFilter(false)">All Stories</button>
+            <button class="filter-chip @(showMineOnly ? "active" : "")" @onclick="() => SetFilter(true)">My Stories</button>
+        </div>
+    }
+
     @if (showForm)
     {
         <div class="card">
@@ -57,10 +65,10 @@
     {
         <p class="loading">Loading...</p>
     }
-    else if (!stories.Any())
+    else if (!VisibleStories.Any())
     {
         <div class="card">
-            <p class="empty-text">Belum ada story — buat satu lewat tombol di atas.</p>
+            <p class="empty-text">@(showMineOnly ? "Belum ada story yang di-assign ke kamu." : "Belum ada story — buat satu lewat tombol di atas.")</p>
         </div>
     }
     else
@@ -76,7 +84,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var story in stories)
+                @foreach (var story in VisibleStories)
                 {
                     var id = story.Id;
                     <tr @onclick="() => OpenDetail(id)">
@@ -111,12 +119,26 @@
     private Dictionary<Guid, Assignment> assignmentsByStoryId = new();
     private bool showForm = false;
     private bool canManageAssignment;
+    private bool isReporter;
+    private bool showMineOnly;
+    private Guid currentUserId;
     private CreateStoryRequest newStory = new();
+
+    private IEnumerable<Story> VisibleStories =>
+        showMineOnly && stories is not null
+            ? stories.Where(s => s.ReporterId == currentUserId)
+            : stories ?? Enumerable.Empty<Story>();
+
+    private void SetFilter(bool mineOnly) => showMineOnly = mineOnly;
 
     protected override async Task OnInitializedAsync()
     {
         var user = (await AuthState!).User;
         canManageAssignment = user.IsInRole("AssignmentDesk") || user.IsInRole("Producer");
+        isReporter = user.IsInRole("Reporter");
+
+        var idClaim = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        Guid.TryParse(idClaim, out currentUserId);
 
         stories = await StoryService.GetAllStoriesAsync();
 

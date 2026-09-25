@@ -55,7 +55,34 @@
                             <iconify-icon icon="mdi:video-outline" width="16" height="16"></iconify-icon>
                             @job.OriginalFilename
                         </span>
-                        <span class="chip @JobChipClass(job.Status)">@job.Status</span>
+                        <div class="job-actions">
+                            <span class="chip @JobChipClass(job.Status)">@job.Status</span>
+
+                            @if (job.Status == IngestJobStatus.Queued)
+                            {
+                                <button class="job-icon-btn" title="Pause" @onclick="() => Pause(job.Id)">
+                                    <iconify-icon icon="mdi:pause" width="16" height="16"></iconify-icon>
+                                </button>
+                                <button class="job-icon-btn" title="Cancel" @onclick="() => Cancel(job.Id)">
+                                    <iconify-icon icon="mdi:close" width="16" height="16"></iconify-icon>
+                                </button>
+                            }
+                            @if (job.Status == IngestJobStatus.Paused)
+                            {
+                                <button class="job-icon-btn" title="Resume" @onclick="() => Resume(job.Id)">
+                                    <iconify-icon icon="mdi:play" width="16" height="16"></iconify-icon>
+                                </button>
+                                <button class="job-icon-btn" title="Cancel" @onclick="() => Cancel(job.Id)">
+                                    <iconify-icon icon="mdi:close" width="16" height="16"></iconify-icon>
+                                </button>
+                            }
+                            @if (job.Status == IngestJobStatus.Processing)
+                            {
+                                <button class="job-icon-btn" title="Cancel" @onclick="() => Cancel(job.Id)">
+                                    <iconify-icon icon="mdi:close" width="16" height="16"></iconify-icon>
+                                </button>
+                            }
+                        </div>
                     </div>
 
                     @if (job.Status == IngestJobStatus.Processing)
@@ -86,6 +113,12 @@
     private string? uploadError;
     private PeriodicTimer? timer;
 
+    // Guards every call that touches IngestService (and therefore the scoped DbContext
+    // behind it). Even wrapped in InvokeAsync, the auto-refresh timer tick and a slow
+    // upload/action can still overlap on the same DbContext instance — this semaphore
+    // makes them queue up instead of racing.
+    private readonly SemaphoreSlim _dbLock = new(1, 1);
+
     protected override async Task OnInitializedAsync()
     {
         await RefreshQueue();
@@ -97,21 +130,32 @@
         timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
         while (await timer.WaitForNextTickAsync())
         {
-            try
+            await InvokeAsync(async () =>
             {
-                await RefreshQueue();
-                await InvokeAsync(StateHasChanged);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Ingest auto-refresh] tick failed: {ex}");
-            }
+                try
+                {
+                    await RefreshQueue();
+                    StateHasChanged();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Ingest auto-refresh] tick failed: {ex}");
+                }
+            });
         }
     }
 
     private async Task RefreshQueue()
     {
-        jobs = await IngestService.GetQueueAsync();
+        await _dbLock.WaitAsync();
+        try
+        {
+            jobs = await IngestService.GetQueueAsync();
+        }
+        finally
+        {
+            _dbLock.Release();
+        }
     }
 
     private async Task HandleUpload(InputFileChangeEventArgs e)
@@ -143,8 +187,16 @@
                 await stream.CopyToAsync(fileStream);
             }
 
-            await IngestService.CreateJobAsync(userId, stagedPath, file.Name);
-            await RefreshQueue();
+            await _dbLock.WaitAsync();
+            try
+            {
+                await IngestService.CreateJobAsync(userId, stagedPath, file.Name);
+                jobs = await IngestService.GetQueueAsync();
+            }
+            finally
+            {
+                _dbLock.Release();
+            }
         }
         catch (Exception ex)
         {
@@ -158,8 +210,61 @@
 
     private async Task Retry(Guid jobId)
     {
-        await IngestService.RetryJobAsync(jobId);
-        await RefreshQueue();
+        await _dbLock.WaitAsync();
+        try
+        {
+            await IngestService.RetryJobAsync(jobId);
+            jobs = await IngestService.GetQueueAsync();
+        }
+        finally
+        {
+            _dbLock.Release();
+        }
+    }
+
+    private async Task Pause(Guid jobId)
+    {
+        await _dbLock.WaitAsync();
+        try
+        {
+            try { await IngestService.PauseJobAsync(jobId); }
+            catch (InvalidOperationException) { /* status changed elsewhere — refresh below will reflect reality */ }
+            jobs = await IngestService.GetQueueAsync();
+        }
+        finally
+        {
+            _dbLock.Release();
+        }
+    }
+
+    private async Task Resume(Guid jobId)
+    {
+        await _dbLock.WaitAsync();
+        try
+        {
+            try { await IngestService.ResumeJobAsync(jobId); }
+            catch (InvalidOperationException) { }
+            jobs = await IngestService.GetQueueAsync();
+        }
+        finally
+        {
+            _dbLock.Release();
+        }
+    }
+
+    private async Task Cancel(Guid jobId)
+    {
+        await _dbLock.WaitAsync();
+        try
+        {
+            try { await IngestService.CancelJobAsync(jobId); }
+            catch (InvalidOperationException) { }
+            jobs = await IngestService.GetQueueAsync();
+        }
+        finally
+        {
+            _dbLock.Release();
+        }
     }
 
     private string JobChipClass(IngestJobStatus status) => status switch
@@ -168,12 +273,15 @@
         IngestJobStatus.Processing => "chip-assigned",
         IngestJobStatus.Completed => "chip-approved",
         IngestJobStatus.Failed => "chip-killed",
+        IngestJobStatus.Paused => "chip-priority-high",
+        IngestJobStatus.Cancelled => "chip-killed",
         _ => "chip-priority-normal"
     };
 
     public async ValueTask DisposeAsync()
     {
         timer?.Dispose();
+        _dbLock.Dispose();
         await Task.CompletedTask;
     }
 }

@@ -1,11 +1,13 @@
-@page "/rundown"
+@page "/rundown/{Id:guid}"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
 @using Insert.Application.Stories
 @using Insert.Domain.Entities
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.SignalR.Client
 @attribute [Authorize(Roles = "Producer")]
+@implements IAsyncDisposable
 @inject RundownService RundownService
 @inject NavigationManager Nav
 
@@ -13,7 +15,13 @@
 
 <div class="story-page rundown-page">
     <div class="story-header">
-        <h1 class="story-title">Rundown</h1>
+        <div class="story-heading">
+            <a href="/rundown" class="back-link">
+                <iconify-icon icon="mdi:arrow-left" width="18" height="18"></iconify-icon>
+                Rundown
+            </a>
+            <h1 class="story-title">@(board?.Rundown.Title ?? "Rundown")</h1>
+        </div>
     </div>
 
     @if (errorMessage is not null)
@@ -21,43 +29,10 @@
         <div class="rundown-error">@errorMessage</div>
     }
 
-    @if (board is null && !showCreateForm)
+    @if (board is null && !loading)
     {
         <div class="card">
-            <p class="empty-text">Belum ada rundown.</p>
-            <button class="btn-primary" @onclick="() => showCreateForm = true">Create Rundown</button>
-        </div>
-    }
-    else if (showCreateForm)
-    {
-        <div class="card">
-            <h5 class="card-title">New Rundown</h5>
-            <EditForm Model="newRundown" OnValidSubmit="CreateRundown" FormName="new-rundown-form" class="form-stack">
-                <div class="field-group">
-                    <label>Title</label>
-                    <InputText class="field-input" @bind-Value="newRundown.Title" />
-                </div>
-                <div class="field-group">
-                    <label>Program</label>
-                    <InputText class="field-input" @bind-Value="newRundown.Program" />
-                </div>
-                <div class="field-group">
-                    <label>Air Date</label>
-                    <InputDate class="field-input" @bind-Value="newRundown.AirDate" />
-                </div>
-                <div class="field-group">
-                    <label>Start Time</label>
-                    <input class="field-input" type="time" value="@newRundown.StartTime.ToString(@"hh\:mm")"
-                           @onchange="OnStartTimeChanged" />
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn-primary">Create</button>
-                    @if (board is not null)
-                    {
-                        <button type="button" class="btn-text" @onclick="() => showCreateForm = false">Cancel</button>
-                    }
-                </div>
-            </EditForm>
+            <p class="empty-text">Rundown tidak ditemukan.</p>
         </div>
     }
     else if (board is not null)
@@ -239,50 +214,54 @@
 </div>
 
 @code {
+    [Parameter] public Guid Id { get; set; }
+
     [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
 
     private RundownBoard? board;
-    private bool showCreateForm = false;
+    private bool loading = true;
     private bool showAddSegment = false;
     private string? errorMessage;
     private Guid? draggedId;
 
-    private CreateRundownRequest newRundown = new();
     private AddSegmentRequest newSegment = new() { ItemType = RundownItemType.Open, Label = "Opening", DurationSeconds = 30 };
     private string segmentDurationText = "00:30";
+
+    private HubConnection? hubConnection;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadBoardAsync();
-        if (board is null) showCreateForm = true;
+        loading = false;
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Nav.ToAbsoluteUri("/hubs/nrcs"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<Guid>("RundownChanged", async (changedRundownId) =>
+        {
+            if (board is not null && changedRundownId == board.Rundown.Id)
+            {
+                await LoadBoardAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+        });
+
+        await hubConnection.StartAsync();
+        if (board is not null)
+            await hubConnection.SendAsync("JoinRundownGroup", board.Rundown.Id);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+            await hubConnection.DisposeAsync();
     }
 
     private async Task LoadBoardAsync()
     {
-        board = await RundownService.GetBoardAsync(null);
-    }
-
-    private async Task CreateRundown()
-    {
-        errorMessage = null;
-        try
-        {
-            var userId = await GetCurrentUserIdAsync() ?? throw new InvalidOperationException("Not signed in.");
-            await RundownService.CreateRundownAsync(newRundown, userId);
-            showCreateForm = false;
-            newRundown = new();
-            await LoadBoardAsync();
-        }
-        catch (Exception ex)
-        {
-            errorMessage = ex.Message;
-        }
-    }
-
-    private void OnStartTimeChanged(ChangeEventArgs e)
-    {
-        if (TimeSpan.TryParse(e.Value?.ToString(), out var ts))
-            newRundown.StartTime = ts;
+        board = await RundownService.GetBoardAsync(Id);
     }
 
     private async Task AddStory(Guid storyId)

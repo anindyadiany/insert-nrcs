@@ -125,6 +125,32 @@
 }
 .btn-text:hover { text-decoration: underline; }
 
+/* ===== Filter toggle (chip-style) ===== */
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 35px;
+    border-radius: 20px;
+    padding: 0 18px;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1.5px solid #00549E;
+    background: transparent;
+    color: #00549E;
+    transition: background-color .15s ease, color .15s ease;
+}
+.filter-chip:hover { background-color: #F0F6FB; }
+.filter-chip.active {
+    background-color: #00549E;
+    color: #fff;
+    box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.25);
+}
+.filter-chip.active:hover { background-color: #003F78; }
+
 /* ===== Detail list ===== */
 .detail-list {
     display: grid;
@@ -446,7 +472,7 @@
 .queue-title { font-size: 13px; font-weight: 600; color: #6C6C6C; margin: 20px 0 10px; }
 
 .job-list { display: flex; flex-direction: column; gap: 10px; }
-.job-card { padding: 14px 16px; }
+.job-card { padding: 14px 16px; margin-bottom: 0; }
 .job-row { display: flex; justify-content: space-between; align-items: center; }
 .job-name { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
 
@@ -568,3 +594,33 @@ body {
 .assignments-table td:nth-child(5) {
     text-align: center;
 }
+
+/* ===== Back link + page heading (shared: StoryDetail, Rundown detail) ===== */
+.story-heading { display: flex; flex-direction: column; gap: 8px; }
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #6C6C6C;
+    text-decoration: none;
+    width: fit-content;
+}
+.back-link:hover { color: #00549E; }
+
+.job-actions { display: flex; align-items: center; gap: 6px; }
+.job-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: #6C6C6C;
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+}
+.job-icon-btn:hover { background-color: #F0F6FB; color: #00549E; }

@@ -6,7 +6,6 @@
 @using Insert.Web.Components.Shared
 @attribute [Authorize(Roles = "Reporter,Producer,AssignmentDesk")]
 @inject StoryService StoryService
-@inject AssignmentService AssignmentService
 
 <PageTitle>@(story?.Title ?? "Story") - INSERT NRCS</PageTitle>
 
@@ -74,76 +73,6 @@
                 </div>
             </div>
 
-            <!-- ===== Kartu kanan: assignments ===== -->
-            <div class="card">
-                <div class="card-head">
-                    <h5 class="card-title">Assignments</h5>
-                    @if (assignment is not null && !showAssignForm)
-                    {
-                        <button class="btn-icon-text" @onclick="() => showAssignForm = true">
-                            <iconify-icon icon="mdi:plus" width="16" height="16"></iconify-icon>
-                            Add
-                        </button>
-                    }
-                </div>
-
-                <div class="card-scroll">
-                    @if (showAssignForm)
-                    {
-                        <EditForm Model="newAssignment" OnValidSubmit="CreateAssignment" class="form-stack">
-                            <DataAnnotationsValidator />
-
-                            <div class="field-group">
-                                <label>Reporter ID</label>
-                                <InputText class="field-input" @bind-Value="reporterIdInput"
-                                           placeholder="paste a user's GUID for now" />
-                                @if (reporterIdError)
-                                {
-                                    <span class="field-error">Reporter ID harus berupa GUID yang valid.</span>
-                                }
-                            </div>
-
-                            <div class="field-group">
-                                <label>Location</label>
-                                <InputText class="field-input" @bind-Value="newAssignment.Location" />
-                            </div>
-
-                            <div class="field-group">
-                                <label>Brief</label>
-                                <InputTextArea class="field-input" @bind-Value="newAssignment.Brief" rows="4" />
-                            </div>
-
-                            <div class="form-actions">
-                                <button type="submit" class="btn-primary">Save</button>
-                                <button type="button" class="btn-text" @onclick="() => showAssignForm = false">Cancel</button>
-                            </div>
-                        </EditForm>
-                    }
-                    else if (assignment is not null)
-                    {
-                        <ul class="assignment-list">
-                            <li class="assignment-row">
-                                <div class="assignment-info">
-                                    <span class="assignment-name">@Show(assignment.Location, "Assignment")</span>
-                                    <span class="assignment-meta">@Show(assignment.Brief, "Tidak ada brief")</span>
-                                </div>
-                                <button class="icon-btn" title="Edit assignment">
-                                    <iconify-icon icon="mdi:pencil-outline" width="18" height="18"></iconify-icon>
-                                </button>
-                            </li>
-                        </ul>
-                    }
-                    else
-                    {
-                        <div class="empty-state">
-                            <p class="empty-text">Belum ada assignment untuk story ini.</p>
-                            <button class="btn-outline" @onclick="() => showAssignForm = true">
-                                + Create Assignment
-                            </button>
-                        </div>
-                    }
-                </div>
-            </div>
         </div>
 
         <!-- ===== Kartu bawah: script ===== -->
@@ -165,32 +94,10 @@
     [Parameter] public Guid Id { get; set; }
 
     private Story? story;
-    private Assignment? assignment;
-    private bool showAssignForm = false;
-    private bool reporterIdError = false;
-    private string reporterIdInput = "";
-    private CreateAssignmentRequest newAssignment = new();
 
     protected override async Task OnInitializedAsync()
     {
         story = await StoryService.GetStoryByIdAsync(Id);
-    }
-
-    private async Task CreateAssignment()
-    {
-        if (!Guid.TryParse(reporterIdInput, out var reporterId))
-        {
-            reporterIdError = true;
-            return;
-        }
-
-        reporterIdError = false;
-        newAssignment.StoryId = Id;
-        newAssignment.ReporterId = reporterId;
-
-        assignment = await AssignmentService.CreateAssignmentAsync(newAssignment);
-        story = await StoryService.GetStoryByIdAsync(Id);
-        showAssignForm = false;
     }
 
     private static string Show(string? value, string fallback = "-") =>

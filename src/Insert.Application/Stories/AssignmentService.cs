@@ -29,19 +29,22 @@ public class AssignmentService
     private readonly IStoryRepository _storyRepository;
     private readonly StoryWorkflowService _workflow;
     private readonly IUserLookupService _userLookup;
+    private readonly INotificationService _notifications;
 
     public AssignmentService(
         IAssignmentRepository assignmentRepository,
         IStoryRepository storyRepository,
         StoryWorkflowService workflow,
-        IUserLookupService userLookup)
+        IUserLookupService userLookup,
+        INotificationService notifications)
     {
         _assignmentRepository = assignmentRepository;
         _storyRepository = storyRepository;
         _workflow = workflow;
         _userLookup = userLookup;
+        _notifications = notifications;
     }
-    
+
 
     public Task<List<UserSummary>> GetReportersAsync() => _userLookup.GetUsersInRoleAsync("Reporter");
 
@@ -74,6 +77,7 @@ public class AssignmentService
         }
 
         await _assignmentRepository.SaveChangesAsync();
+        await _notifications.AssignmentChangedAsync(request.ReporterId);
         return assignment;
     }
 
@@ -97,6 +101,7 @@ public class AssignmentService
         }
 
         await _assignmentRepository.SaveChangesAsync();
+        await _notifications.AssignmentChangedAsync(request.ReporterId);
     }
     public Task<List<Assignment>> GetAllAssignmentsAsync() => _assignmentRepository.GetAllAsync();
     public Task<List<Assignment>> GetAssignmentsForReporterAsync(Guid reporterId) => _assignmentRepository.GetByReporterIdAsync(reporterId);

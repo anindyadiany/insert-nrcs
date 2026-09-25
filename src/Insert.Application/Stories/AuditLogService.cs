@@ -5,6 +5,7 @@ namespace Insert.Application.Stories;
 public interface IAuditLogRepository
 {
     Task AddAsync(AuditLog entry);
+    Task<List<AuditLog>> GetRecentAsync(int count);
     Task SaveChangesAsync();
 }
 
@@ -16,6 +17,8 @@ public class AuditLogService
     {
         _repository = repository;
     }
+
+    public Task<List<AuditLog>> GetRecentAsync(int count = 10) => _repository.GetRecentAsync(count);
 
     public async Task LogAsync(Guid userId, string action, string entityType, Guid entityId, string? before = null, string? after = null)
     {
