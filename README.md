@@ -142,27 +142,27 @@ Berikut tampilan halaman-halaman utama aplikasi.
 
 <p align="center">
   <img width="760" alt="Halaman Story List" src="https://github.com/user-attachments/assets/3d8f5edf-6ff9-46c9-a5fe-1962bd3f25d3" /><br>
-  <em>Gambar 5.2.1. Halaman Story List. Daftar seluruh story beserta status dan prioritasnya. Reporter punya toggle "All Stories / My Stories".</em>
+  <em>Gambar 5.1. Halaman Story List. Daftar seluruh story beserta status dan prioritasnya. Reporter punya toggle "All Stories / My Stories".</em>
 </p>
 
 <p align="center">
   <img width="760" alt="Halaman Story Detail" src="https://github.com/user-attachments/assets/d7ab0dae-e883-469d-a126-93c1fdd9bacd" /><br>
-  <em>Gambar 5.2.2. Halaman Story Detail. Editor naskah dengan autosave dan version history, dilengkapi panel approval untuk Producer.</em>
+  <em>Gambar 5.2. Halaman Story Detail. Editor naskah dengan autosave dan version history, dilengkapi panel approval untuk Producer.</em>
 </p>
 
 <p align="center">
   <img width="760" alt="Halaman Assignment" src="https://github.com/user-attachments/assets/23708a6b-3764-468d-afa3-b3300d6b3d84" /><br>
-  <em>Gambar 5.2.3. Halaman Assignmen. Pembuatan dan penugasan story ke reporter oleh Assignment Desk.</em>
+  <em>Gambar 5.3. Halaman Assignmen. Pembuatan dan penugasan story ke reporter oleh Assignment Desk.</em>
 </p>
 
 <p align="center">
   <img width="760" alt="Halaman Ingest" src="https://github.com/user-attachments/assets/09a3dc73-1a8b-44af-b58f-2af9496cf8fb" /><br>
-  <em>Gambar 5.2.4. Halaman Ingest. Upload berkas media dan antrean pemrosesan (queue) beserta status tiap job.</em>
+  <em>Gambar 5.4. Halaman Ingest. Upload berkas media dan antrean pemrosesan (queue) beserta status tiap job.</em>
 </p>
 
 <p align="center">
   <img width="760" alt="Halaman Rundown Detail / Board" src="https://github.com/user-attachments/assets/051f9b7b-d54d-4794-8706-760348ca5dc0" /><br>
-  <em>Gambar 5.2.5. Halaman Rundown Detail / Board. Susunan item rundown (story, bumper, iklan, dsb) untuk satu rundown.</em>
+  <em>Gambar 5.5. Halaman Rundown Detail / Board. Susunan item rundown (story, bumper, iklan, dsb) untuk satu rundown.</em>
 </p>
 
 ## 6. Gap
