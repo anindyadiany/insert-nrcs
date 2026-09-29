@@ -10,11 +10,15 @@ INSERT NRCS (Newsroom Computer System) adalah sistem yang mengelola proses produ
 
 *The Story is the center of the newsroom workflow* — semua fitur (assignment, media, script, approval, rundown) berputar di sekitar satu entitas Story, sehingga siapa pun yang membuka story bisa langsung tahu statusnya tanpa perlu bertanya ke orang lain.
 
-![Gambar 1.1 — Preview Dashboard INSERT NRCS](docs/img/1.1-dashboard.png)
-*Gambar 1.1. Preview Dashboard INSERT NRCS*
+<p align="center">
+  <img width="500" alt="Preview Dashboard INSERT NRCS" src="https://github.com/user-attachments/assets/180997fa-033f-42e0-81d0-a2f94e8cb5b5" /><br>
+  <em>Gambar 1.1. Preview Dashboard INSERT NRCS</em>
+</p>
 
-![Gambar 1.2 — Alur kerja newsroom yang dikelola NRCS](docs/img/1.2-newsroom-flow.png)
-*Gambar 1.2. Alur kerja newsroom yang dikelola NRCS, dari perencanaan hingga tayang.*
+<p align="center">
+  <img width="420" alt="Alur kerja newsroom yang dikelola NRCS" src="https://github.com/user-attachments/assets/9db26c62-2582-46b8-b1fe-1fa81ab8a851" /><br>
+  <em>Gambar 1.2. Alur kerja newsroom yang dikelola NRCS, dari perencanaan hingga tayang.</em>
+</p>
 
 ## 2. Tech Stack
 
@@ -33,8 +37,10 @@ INSERT NRCS (Newsroom Computer System) adalah sistem yang mengelola proses produ
 
 INSERT NRCS memakai pendekatan Clean Architecture: kode dipisah menjadi enam project dalam empat layer. Aturan intinya, ketergantungan selalu mengarah ke dalam — lapisan luar seperti UI dan database bergantung pada domain, tidak pernah sebaliknya — sehingga komponen teknis bisa diganti tanpa merombak logika inti.
 
-![Gambar 3.1 — Lapisan Architecture](docs/img/3.1-architecture.png)
-*Gambar 3.1. Lapisan Architecture*
+<p align="center">
+  <img width="560" alt="Lapisan Architecture" src="https://github.com/user-attachments/assets/e5c104be-6005-4ad9-ba4d-323ff2b734d2" /><br>
+  <em>Gambar 3.1. Lapisan Architecture</em>
+</p>
 
 | Project | Tanggung Jawab | Bergantung pada |
 |---|---|---|
@@ -47,8 +53,10 @@ INSERT NRCS memakai pendekatan Clean Architecture: kode dipisah menjadi enam pro
 
 ## 4. Domain Model & Flow Status
 
-![Gambar 4.1 — State machine status Story](docs/img/4.1-workflow.png)
-*Gambar 4.1. State machine status Story*
+<p align="center">
+  <img width="820" alt="State machine status Story" src="https://github.com/user-attachments/assets/4f74d595-1385-42fd-a213-edef9288bbb6" /><br>
+  <em>Gambar 4.1. State machine status Story</em>
+</p>
 
 Perpindahan status Story mengikuti jalur tetap yang dicek lewat `StoryWorkflowService.CanTransition()`, yaitu dari Draft sampai Published. Selain jalur normal ini, ada Reject (Story balik ke pengerjaan) dan Kill (Story dibatalkan sebelum tayang).
 
@@ -93,8 +101,10 @@ Tabel dikelompokkan berdasarkan fungsinya:
 
 Keseluruhan relasi antar tabel digambarkan pada ERD berikut, dengan Story sebagai entitas pusat yang menghubungkan assignment, naskah, media, dan rundown.
 
-![Gambar 5.1 — Struktur ERD DBML](docs/img/5.1-erd.png)
-*Gambar 5.1. Struktur ERD DBML*
+<p align="center">
+  <img width="820" alt="Struktur ERD DBML" src="https://github.com/user-attachments/assets/71fe7e7c-ce7e-448c-951e-b48157e75f3f" /><br>
+  <em>Gambar 4.1. Struktur ERD DBML</em>
+</p>
 
 ## 5. Features
 
@@ -130,26 +140,36 @@ Beberapa hal di luar cakupan milestone awal yang bisa dikembangkan untuk melengk
 
 Berikut tampilan halaman-halaman utama aplikasi.
 
-![Gambar 5.2 — Halaman Story List](docs/img/5.2-story-list.png)
-*Gambar 5.2. Halaman Story List — daftar seluruh story beserta status dan prioritasnya. Reporter punya toggle "All Stories / My Stories".*
+<p align="center">
+  <img width="760" alt="Halaman Story List" src="https://github.com/user-attachments/assets/3d8f5edf-6ff9-46c9-a5fe-1962bd3f25d3" /><br>
+  <em>Gambar 5.2.1. Halaman Story List. Daftar seluruh story beserta status dan prioritasnya. Reporter punya toggle "All Stories / My Stories".</em>
+</p>
 
-![Gambar 5.3 — Halaman Story Detail](docs/img/5.3-story-detail.png)
-*Gambar 5.3. Halaman Story Detail — editor naskah dengan autosave dan version history, dilengkapi panel approval untuk Producer.*
+<p align="center">
+  <img width="760" alt="Halaman Story Detail" src="https://github.com/user-attachments/assets/d7ab0dae-e883-469d-a126-93c1fdd9bacd" /><br>
+  <em>Gambar 5.2.2. Halaman Story Detail. Editor naskah dengan autosave dan version history, dilengkapi panel approval untuk Producer.</em>
+</p>
 
-![Gambar 5.4 — Halaman Assignment](docs/img/5.4-assignment.png)
-*Gambar 5.4. Halaman Assignment — pembuatan dan penugasan story ke reporter oleh Assignment Desk.*
+<p align="center">
+  <img width="760" alt="Halaman Assignment" src="https://github.com/user-attachments/assets/23708a6b-3764-468d-afa3-b3300d6b3d84" /><br>
+  <em>Gambar 5.2.3. Halaman Assignmen. Pembuatan dan penugasan story ke reporter oleh Assignment Desk.</em>
+</p>
 
-![Gambar 5.5 — Halaman Ingest](docs/img/5.5-ingest.png)
-*Gambar 5.5. Halaman Ingest — upload berkas media dan antrean pemrosesan (queue) beserta status tiap job.*
+<p align="center">
+  <img width="760" alt="Halaman Ingest" src="https://github.com/user-attachments/assets/09a3dc73-1a8b-44af-b58f-2af9496cf8fb" /><br>
+  <em>Gambar 5.2.4. Halaman Ingest. Upload berkas media dan antrean pemrosesan (queue) beserta status tiap job.</em>
+</p>
 
-![Gambar 5.6 — Halaman Rundown Detail / Board](docs/img/5.6-rundown.png)
-*Gambar 5.6. Halaman Rundown Detail / Board — susunan item rundown (story, bumper, iklan, dsb) untuk satu rundown.*
+<p align="center">
+  <img width="760" alt="Halaman Rundown Detail / Board" src="https://github.com/user-attachments/assets/051f9b7b-d54d-4794-8706-760348ca5dc0" /><br>
+  <em>Gambar 5.2.5. Halaman Rundown Detail / Board. Susunan item rundown (story, bumper, iklan, dsb) untuk satu rundown.</em>
+</p>
 
 ## 6. Gap
 
-1. **Penetapan Producer belum otomatis** — setiap story belum otomatis terhubung ke seorang Producer. Perlu diputuskan apakah Producer ditetapkan otomatis saat approval pertama, atau ditugaskan manual.
-2. **Nama reviewer belum tampil di riwayat versi** — riwayat versi naskah sudah menyimpan siapa yang me-review, tapi di tampilan belum diterjemahkan menjadi nama pengguna.
-3. **Perbandingan versi belum menyorot perubahan** — saat membandingkan dua versi naskah, keduanya ditampilkan utuh berdampingan; bagian yang berubah belum di-highlight secara spesifik.
+1. **Penetapan Producer belum otomatis**: setiap story belum otomatis terhubung ke seorang Producer. Perlu diputuskan apakah Producer ditetapkan otomatis saat approval pertama, atau ditugaskan manual.
+2. **Nama reviewer belum tampil di riwayat versi**: riwayat versi naskah sudah menyimpan siapa yang me-review, tapi di tampilan belum diterjemahkan menjadi nama pengguna.
+3. **Perbandingan versi belum menyorot perubahan**: saat membandingkan dua versi naskah, keduanya ditampilkan utuh berdampingan; bagian yang berubah belum di-highlight secara spesifik.
 
 ## 7. Directory Structure
 
