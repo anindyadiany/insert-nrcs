@@ -118,7 +118,7 @@ Keseluruhan relasi antar tabel digambarkan pada ERD berikut, dengan Story sebaga
 | M6: Script (autosave + version) | Selesai | Autosave 1.5s debounce, save version, word count (filter cue/metadata), version viewer + restore |
 | M7: Media Bin file info | Selesai | Thumbnail + durasi + resolusi + ukuran file |
 | M8: Approval Workflow | Selesai | Approve/Reject, alert revisi untuk reporter |
-| M9: Realtime (SignalR) | Selesai | Rundown sync, assignment/status sync, script version sync — lihat bagian 6 |
+| M9: Realtime (SignalR) | Selesai | Rundown sync, assignment/status sync, script version sync |
 | M10: Dashboard per-role | Selesai | |
 
 10 dari 10 milestone selesai. Seluruh alur inti newsroom — dari pembuatan story, penugasan, ingest media, penulisan naskah, approval, hingga rundown — sudah berjalan dan dapat digunakan.
